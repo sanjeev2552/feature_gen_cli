@@ -59,7 +59,30 @@ The JSON schema defines your feature's API methods and response structure.
   "response": {
     "id": 123,
     "name": "string",
-    "email": "string"
+    "email": "string",
+    "address": {
+      "street": "string",
+      "city": "string"
+    },
+    "tags": ["string"]
+  }
+}
+```
+
+### Nested Objects
+
+Feature Gen automatically detects nested JSON objects and lists of objects in your schema. It generates separate Freezed models for these nested structures and handles the mapping between Data Models and Domain Entities recursively.
+
+```json
+{
+  "response": {
+    "user": {
+      "id": "int",
+      "profile": {
+        "bio": "string",
+        "avatar_url": "string"
+      }
+    }
   }
 }
 ```
@@ -92,8 +115,10 @@ Defines the fields for the entity and model classes. Keys are field names, value
 | `"bool"`     | `bool`                 |
 | `"list"`     | `List<dynamic>`        |
 | `"map"`      | `Map<String, dynamic>` |
+| `{ ... }`    | `CustomModel`          |
+| `[{ ... }]`  | `List<CustomModel>`    |
 
-You can also use actual JSON values (e.g. `123` → `int`, `"hello"` → `String`).
+You can also use actual JSON values (e.g. `123` → `int`, `"hello"` → `String`). Nested objects are automatically lifted into their own classes named after the key (PascalCase).
 
 ## Generated Structure
 
@@ -114,6 +139,7 @@ lib/features/user/
 │   ├── repositories/
 │   │   └── user_repository.dart
 │   └── usecases/
+│       ├── get_user_usecase.dart
 │       ├── post_some_data_usecase.dart
 │       ├── update_user_usecase.dart
 │       └── delete_user_usecase.dart

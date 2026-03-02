@@ -1,16 +1,20 @@
 import 'package:equatable/equatable.dart';
 
-class {{name}}Entity extends Equatable {
-    {{#fields}}
-    final {{type}}? {{name}};
-    {{/fields}}
 
-    const {{name}}Entity({
-        {{#fields}}
+{{#fields}}
+{{#isRoot}}// Root Entity{{/isRoot}}
+class {{name}}{{#isRoot}}Entity{{/isRoot}} extends Equatable {
+    {{#properties}}
+    final {{{type}}}? {{name}};
+    {{/properties}}
+
+    const {{name}}{{#isRoot}}Entity{{/isRoot}}({
+        {{#properties}}
         this.{{name}},
-        {{/fields}}
+        {{/properties}}
     });
 
     @override
-    List<Object?> get props => [{{#fields}}{{name}}, {{/fields}}];
+    List<Object?> get props => [{{#properties}}{{name}}, {{/properties}}];
 }
+{{/fields}}

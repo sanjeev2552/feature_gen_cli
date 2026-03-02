@@ -3,45 +3,51 @@ import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nam
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/repositories/{{nameLowerCase}}_repository.dart';
 
 {{#hasParams}}
-class {{methodNamePascalCase}}PathParams {
-    {{#params}}
-    final {{type}}? {{name}};
-    {{/params}}
+{{#params}}
+class {{name}}{{#isRoot}}PathParams{{/isRoot}} {
+    {{#properties}}
+    final {{{type}}}? {{name}};
+    {{/properties}}
 
-    {{methodNamePascalCase}}PathParams({
-        {{#params}}
+    {{name}}{{#isRoot}}PathParams{{/isRoot}}({
+        {{#properties}}
         this.{{name}},
-        {{/params}}
+        {{/properties}}
     });
 }
+{{/params}}
 {{/hasParams}}
 
 {{#hasBody}}
-class {{methodNamePascalCase}}BodyParams {
-    {{#body}}
-    final {{type}}? {{name}};
-    {{/body}}
+{{#body}}
+class {{name}}{{#isRoot}}BodyParams{{/isRoot}} {
+    {{#properties}}
+    final {{{type}}}? {{name}};
+    {{/properties}}
 
-    {{methodNamePascalCase}}BodyParams({
-        {{#body}}
+    {{name}}{{#isRoot}}BodyParams{{/isRoot}}({
+        {{#properties}}
         this.{{name}},
-        {{/body}}
+        {{/properties}}
     });
 }
+{{/body}}
 {{/hasBody}}
 
 {{#hasQuery}}
-class {{methodNamePascalCase}}QueryParams {
-    {{#query}}
-    final {{type}}? {{name}};
-    {{/query}}
+{{#query}}
+class {{name}}{{#isRoot}}QueryParams{{/isRoot}} {
+    {{#properties}}
+    final {{{type}}}? {{name}};
+    {{/properties}}
 
-    {{methodNamePascalCase}}QueryParams({
-        {{#query}}
+    {{name}}{{#isRoot}}QueryParams{{/isRoot}}({
+        {{#properties}}
         this.{{name}},
-        {{/query}}
+        {{/properties}}
     });
 }
+{{/query}}
 {{/hasQuery}}
 
 {{#hasUseCase}}

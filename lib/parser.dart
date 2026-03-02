@@ -9,7 +9,8 @@ import 'package:feature_gen/yaml_helper.dart';
 /// Parses JSON schema files and builds the template [Context] for code generation.
 ///
 /// The parser is intentionally strict about required sections so generated code
-/// is predictable and templates can rely on stable fields.
+/// is predictable and templates can rely on stable fields. It also builds
+/// nested field graphs so templates can emit models for complex payloads.
 class Parser {
   /// Reads and deserialises the JSON schema file at [path] into a [Schema].
   Schema parse(String path) {
@@ -24,7 +25,8 @@ class Parser {
   /// Builds a [Context] from a [featureName] and parsed [schema].
   ///
   /// Returns an empty context if validation fails. The caller is expected to
-  /// halt or surface the error to the user.
+  /// halt or surface the error to the user. Response fields are collected into
+  /// a nested tree with a root node matching the feature name.
   Future<Context> buildContext(String featureName, Schema schema) async {
     final projectRoot = Directory.current.path;
     final projectName = await YamlHelper().getProjectName(workingDirectory: projectRoot);
@@ -60,15 +62,15 @@ class Parser {
 
     // Response fields become entity/model properties.
     final response = schema.response ?? {};
-    final fields = response.entries.map((entry) {
-      return ContextField(name: entry.key, type: getDartType(entry.value));
-    }).toList();
+    final contextFields = <NestedContextField>[];
+    final fields = buildContextFields(response, contextFields);
+    contextFields.add(NestedContextField(name: feature, properties: fields, isRoot: true));
 
     return Context(
       name: feature,
       nameLowerCase: featureName.toLowerCase(),
       nameCamelCase: featureName.toCamelCase(),
-      fields: fields,
+      fields: contextFields,
       methods: methods,
       generateUseCase: generateUseCase,
       projectRoot: projectRoot,
@@ -78,29 +80,104 @@ class Parser {
 
   /// Converts an [ApiMethod] schema entry into a [ContextMethod].
   ///
-  /// The `hasUseCase` flag is derived from the presence of any params/body/query.
+  /// Params/body/query sections are expanded into nested field trees that can
+  /// generate request models. The `hasUseCase` flag is derived from the
+  /// presence of any params/body/query.
   ContextMethod buildContextMethod(MapEntry<String, ApiMethod> method) {
-    final params = buildContextFields(method.value.params ?? {});
-    final body = buildContextFields(method.value.body ?? {});
-    final query = buildContextFields(method.value.query ?? {});
+    final paramsFields = <NestedContextField>[],
+        bodyFields = <NestedContextField>[],
+        queryFields = <NestedContextField>[];
+
+    final params = buildContextFields(method.value.params ?? {}, paramsFields);
+    final body = buildContextFields(method.value.body ?? {}, bodyFields);
+    final query = buildContextFields(method.value.query ?? {}, queryFields);
+
+    if (params.isNotEmpty) {
+      paramsFields.add(
+        NestedContextField(
+          name: method.key.camelCaseToPascalCase(),
+          properties: params,
+          isRoot: true,
+        ),
+      );
+    }
+    if (body.isNotEmpty) {
+      bodyFields.add(
+        NestedContextField(
+          name: method.key.camelCaseToPascalCase(),
+          properties: body,
+          isRoot: true,
+        ),
+      );
+    }
+    if (query.isNotEmpty) {
+      queryFields.add(
+        NestedContextField(
+          name: method.key.camelCaseToPascalCase(),
+          properties: query,
+          isRoot: true,
+        ),
+      );
+    }
 
     return ContextMethod(
       methodName: method.key,
       methodNamePascalCase: method.key.camelCaseToPascalCase(),
-      params: params,
-      body: body,
-      query: query,
-      hasParams: params.isNotEmpty,
-      hasBody: body.isNotEmpty,
-      hasQuery: query.isNotEmpty,
-      hasUseCase: params.isNotEmpty || body.isNotEmpty || query.isNotEmpty,
+      params: paramsFields,
+      body: bodyFields,
+      query: queryFields,
+      hasParams: paramsFields.isNotEmpty,
+      hasBody: bodyFields.isNotEmpty,
+      hasQuery: queryFields.isNotEmpty,
+      hasUseCase: paramsFields.isNotEmpty || bodyFields.isNotEmpty || queryFields.isNotEmpty,
     );
   }
 
   /// Converts a `{ fieldName: schemaType }` map to a list of [ContextField]s.
-  List<ContextField> buildContextFields(Map<String, dynamic> fields) {
+  ///
+  /// Nested objects and lists of objects are lifted into [NestedContextField]
+  /// entries so templates can generate custom model classes.
+  List<ContextField> buildContextFields(
+    Map<String, dynamic> fields,
+    List<NestedContextField> nestedFields,
+  ) {
     return fields.entries.map((entry) {
-      return ContextField(name: entry.key, type: getDartType(entry.value));
+      final value = entry.value;
+
+      // If nested JSON object → treat as custom model type
+      if (value is Map<String, dynamic>) {
+        final someData = buildContextFields(value, nestedFields);
+        nestedFields.add(
+          NestedContextField(name: entry.key.camelCaseToPascalCase(), properties: someData),
+        );
+        return ContextField(
+          name: entry.key,
+          type: entry.key.camelCaseToPascalCase(),
+          isCustom: true,
+        );
+      }
+
+      // If list of objects → List<CustomModel>
+      if (value is List && value.isNotEmpty) {
+        var type = "";
+        var isCustom = false;
+        if (value.first is Map<String, dynamic>) {
+          nestedFields.add(
+            NestedContextField(
+              name: entry.key.camelCaseToPascalCase(),
+              properties: buildContextFields(value.first, nestedFields),
+            ),
+          );
+          type = entry.key.camelCaseToPascalCase();
+          isCustom = true;
+        } else {
+          type = getDartType(value.first);
+        }
+        return ContextField(name: entry.key, type: "List<$type>", isList: true, isCustom: isCustom);
+      }
+
+      final type = getDartType(value);
+      return ContextField(name: entry.key, type: type, isList: type.contains('List'));
     }).toList();
   }
 
@@ -129,9 +206,6 @@ class Parser {
   /// This is a simple mapping meant for scaffolding; complex types should be
   /// updated by the developer after generation.
   String getDartType(dynamic type) {
-    if (type == 'string' || type is String) {
-      return 'String';
-    }
     if (type == 'int' || type is int) {
       return 'int';
     }
@@ -146,6 +220,9 @@ class Parser {
     }
     if (type == 'map' || type is Map) {
       return 'Map<String, dynamic>';
+    }
+    if (type == 'string' || type is String) {
+      return 'String';
     }
     return 'dynamic';
   }

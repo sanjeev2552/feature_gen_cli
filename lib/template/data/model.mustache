@@ -1,26 +1,30 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart' as entity;
 
 part '{{nameLowerCase}}_model.freezed.dart';
 part '{{nameLowerCase}}_model.g.dart';
 
+{{#fields}}
+{{#isRoot}}// Root Model{{/isRoot}}
 @freezed
-abstract class {{name}}Model with _${{name}}Model {
-  const factory {{name}}Model({
-    {{#fields}}
-    {{type}}? {{name}},
-    {{/fields}}
-  }) = _{{name}}Model;
+abstract class {{name}}{{#isRoot}}Model{{/isRoot}} with _${{name}}{{#isRoot}}Model{{/isRoot}} {
+  const factory {{name}}{{#isRoot}}Model{{/isRoot}}({
+    {{#properties}}
+    {{{type}}}? {{name}},
+    {{/properties}}
+  }) = _{{name}}{{#isRoot}}Model{{/isRoot}};
 
-  factory {{name}}Model.fromJson(Map<String, dynamic> json) => _${{name}}ModelFromJson(json);
+  factory {{name}}{{#isRoot}}Model{{/isRoot}}.fromJson(Map<String, dynamic> json) => _${{name}}{{#isRoot}}Model{{/isRoot}}FromJson(json);
 }
 
-extension {{name}}ModelExtension on {{name}}Model {
-  {{name}}Entity toEntity() {
-    return {{name}}Entity(
-      {{#fields}}
-      {{name}}: {{name}},
-      {{/fields}}
+
+extension {{name}}{{#isRoot}}Model{{/isRoot}}Extension on {{name}}{{#isRoot}}Model{{/isRoot}} {
+  entity.{{name}}{{#isRoot}}Entity{{/isRoot}} toEntity() {
+    return entity.{{name}}{{#isRoot}}Entity{{/isRoot}}(
+      {{#properties}}
+      {{name}}: {{name}}{{#isList}}?.map((item) => item{{#isCustom}}.toEntity(){{/isCustom}}).toList(){{/isList}}{{^isList}}{{#isCustom}}?.toEntity(){{/isCustom}}{{/isList}},
+      {{/properties}}
     );
   }
 }
+{{/fields}}

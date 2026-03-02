@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+### Features
+
+- **Nested Object Support** — Support for nested JSON objects and lists of objects in both API request models (`params`, `body`, `query`) and response entities/models.
+- **Recursive Model Generation** — Automatically generates nested Freezed models and entities for complex schema structures.
+- **Enhanced Type Mapping** — Improved template logic for handling lists, maps, and custom types during `toEntity` mapping.
+- **Root Entity Markers** — Added comments to generated entities to clearly identify root objects.
+
 ## 1.0.0
 
 ### Features
