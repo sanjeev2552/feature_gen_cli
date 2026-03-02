@@ -1,18 +1,49 @@
 /// Top-level schema representation parsed from the user's JSON file.
 ///
 /// This mirrors the user-provided schema shape closely to keep parsing simple,
-/// while enabling nested response trees.
+/// while enabling nested response trees and presentation configuration.
 class Schema {
   final Api? api;
   final Map<String, dynamic>? response;
+  final Config? config;
 
-  Schema({this.api, this.response});
+  Schema({this.api, this.response, this.config});
 
   factory Schema.fromJson(Map<String, dynamic> json) {
     return Schema(
-      api: Api.fromJson(json['api'] as Map<String, dynamic>),
+      api: json['api'] == null ? null : Api.fromJson(json['api'] as Map<String, dynamic>),
       response: json['response'] as Map<String, dynamic>?,
+      config: json['config'] == null
+          ? null
+          : Config.fromJson(json['config'] as Map<String, dynamic>),
     );
+  }
+}
+
+/// Controls which presentation layer is generated.
+///
+/// Exactly one of [bloc] or [riverpod] must be true when provided.
+class Config {
+  final bool? bloc;
+  final bool? riverpod;
+
+  Config({this.bloc, this.riverpod}) {
+    if (bloc == null && riverpod == null) {
+      return;
+    }
+    if (!(bloc! ^ riverpod!)) {
+      throw ArgumentError(
+        'Exactly one of "bloc" or "riverpod" must be true in the config section.',
+      );
+    }
+  }
+
+  factory Config.fromJson(Map<String, dynamic> json) {
+    return Config(bloc: json['bloc'] as bool?, riverpod: json['riverpod'] as bool?);
+  }
+
+  Map<String, dynamic> toMap() {
+    return {'bloc': bloc, 'riverpod': riverpod};
   }
 }
 
@@ -26,7 +57,11 @@ class Api {
   Api({this.methods});
 
   factory Api.fromJson(Map<String, dynamic> json) {
-    return Api(methods: Methods.fromJson(json['methods'] as Map<String, dynamic>));
+    return Api(
+      methods: json['methods'] == null
+          ? null
+          : Methods.fromJson(json['methods'] as Map<String, dynamic>),
+    );
   }
 
   Map<String, dynamic> toMap() {
@@ -177,7 +212,7 @@ class ContextField {
 /// Root context passed to the Mustache template engine for code generation.
 ///
 /// This is the single source of truth for all template rendering, including
-/// nested models and API method contracts.
+/// nested models, API method contracts, and presentation-layer selection.
 class Context {
   final String name;
   final String nameLowerCase;
@@ -187,6 +222,7 @@ class Context {
   final bool generateUseCase;
   final String projectRoot;
   final String projectName;
+  final Config config;
 
   Context({
     required this.name,
@@ -197,6 +233,7 @@ class Context {
     required this.generateUseCase,
     required this.projectRoot,
     required this.projectName,
+    required this.config,
   });
 
   Map<String, dynamic> toMap() {
@@ -209,6 +246,7 @@ class Context {
       'generateUseCase': generateUseCase,
       'projectRoot': projectRoot,
       'projectName': projectName,
+      'config': config.toMap(),
     };
   }
 

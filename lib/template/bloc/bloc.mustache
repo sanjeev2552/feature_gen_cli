@@ -1,10 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 {{#methods}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
 {{/methods}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/bloc/{{nameLowerCase}}_event.dart';
 import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/bloc/{{nameLowerCase}}_state.dart';
 
+@injectable
 class {{name}}Bloc extends Bloc<{{name}}Event, {{name}}State> {
   {{#methods}}
   final {{methodNamePascalCase}}UseCase {{methodName}}UseCase;

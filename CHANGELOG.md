@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0
+
+### Features
+
+- **Riverpod Support** — Support for generating Riverpod `Notifier` classes as an alternative to BLoC.
+- **Configurable Presentation Layer** — New `config` section in the JSON schema allows choosing between `bloc` and `riverpod`.
+- **Selective Dependency Management** — Only installs the dependencies required for the selected state management (e.g., skips `flutter_bloc` if using `riverpod`).
+- **Strict Schema Validation** — Enforces at least one state management option in the `config` section.
+
 ## 1.1.0
 
 ### Features

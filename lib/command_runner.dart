@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:feature_gen/command_helper.dart';
+import 'package:feature_gen/types.dart';
 import 'package:feature_gen/yaml_helper.dart';
 
 /// Executes shell commands for dependency management, build_runner, and formatting.
@@ -25,16 +26,17 @@ class CommandRunner {
   /// Checks the target project for required dependencies and installs any missing ones.
   ///
   /// Dependencies are added via `dart pub add` to keep the project in a valid
-  /// state (it updates `pubspec.yaml` and runs `pub get`).
-  Future<void> checkAndAddDeps({required String workingDirectory}) async {
-    const requiredDependencies = [
+  /// state (it updates `pubspec.yaml` and runs `pub get`). This includes
+  /// packages needed for either bloc or riverpod generation.
+  Future<void> checkAndAddDeps({required Config config, required String workingDirectory}) async {
+    final requiredDependencies = [
       'get_it',
       'injectable',
-      'flutter_bloc',
-      'bloc',
+      if (config.bloc == true) ...['flutter_bloc', 'bloc'],
       'equatable',
       'freezed_annotation',
       'json_annotation',
+      if (config.riverpod == true) 'flutter_riverpod',
     ];
     const requiredDevDependencies = [
       'build_runner',

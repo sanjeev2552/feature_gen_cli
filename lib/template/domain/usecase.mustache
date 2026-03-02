@@ -1,3 +1,4 @@
+import 'package:injectable/injectable.dart';
 import 'package:{{projectName}}/features/shared/usecase/base_usecase.dart';
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/repositories/{{nameLowerCase}}_repository.dart';
@@ -76,6 +77,7 @@ class {{methodNamePascalCase}}Params {
 }
 {{/hasUseCase}}
 
+@injectable
 class {{methodNamePascalCase}}UseCase extends BaseUseCase<{{name}}Entity, {{#hasUseCase}} {{methodNamePascalCase}}Params {{/hasUseCase}} {{^hasUseCase}} NoParams {{/hasUseCase}}> {
     final {{name}}Repository {{nameCamelCase}}Repository;
 

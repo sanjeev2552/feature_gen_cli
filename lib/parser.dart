@@ -10,7 +10,8 @@ import 'package:feature_gen/yaml_helper.dart';
 ///
 /// The parser is intentionally strict about required sections so generated code
 /// is predictable and templates can rely on stable fields. It also builds
-/// nested field graphs so templates can emit models for complex payloads.
+/// nested field graphs so templates can emit models for complex payloads and
+/// enforces presentation configuration.
 class Parser {
   /// Reads and deserialises the JSON schema file at [path] into a [Schema].
   Schema parse(String path) {
@@ -41,6 +42,7 @@ class Parser {
         generateUseCase: false,
         projectRoot: projectRoot,
         projectName: projectName,
+        config: Config(),
       );
     }
 
@@ -75,6 +77,7 @@ class Parser {
       generateUseCase: generateUseCase,
       projectRoot: projectRoot,
       projectName: projectName,
+      config: schema.config ?? Config(),
     );
   }
 
@@ -181,7 +184,10 @@ class Parser {
     }).toList();
   }
 
-  /// Validates that [schema] has the required `api`, `api.methods`, and `response` sections.
+  /// Validates that [schema] has the required sections and config.
+  ///
+  /// Requires `api`, `api.methods`, `response`, and `config`, with exactly one
+  /// of `config.bloc` or `config.riverpod` set to true.
   ///
   /// Validation errors are reported via [CommandHelper] to ensure consistent
   /// CLI output.
@@ -196,6 +202,14 @@ class Parser {
     }
     if (schema.response == null) {
       CommandHelper().error('Schema is not valid. "response" is required.');
+      return false;
+    }
+    if (schema.config == null) {
+      CommandHelper().error('Schema is not valid. "config" is required.');
+      return false;
+    }
+    if (schema.config!.bloc == null && schema.config!.riverpod == null) {
+      CommandHelper().error('Schema is not valid. "config.bloc" or "config.riverpod" is required.');
       return false;
     }
     return true;

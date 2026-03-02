@@ -1,0 +1,41 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:injectable/injectable.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+{{#methods}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
+{{^hasUseCase}}
+import 'package:{{projectName}}/features/shared/usecase/base_usecase.dart';
+{{/hasUseCase}}
+{{/methods}}
+
+@injectable
+class {{name}}Notifier extends AsyncNotifier<{{name}}Entity?> {
+    {{#methods}}
+    final {{methodNamePascalCase}}UseCase {{methodName}}UseCase;
+    {{/methods}}
+
+    {{name}}Notifier({
+        {{#methods}}
+        required this.{{methodName}}UseCase,
+        {{/methods}}
+    });
+
+    @override
+    Future<{{name}}Entity?> build() async {
+        return null;
+    }
+
+    {{#methods}}
+    Future<void> {{methodName}}({{#hasUseCase}}{{methodNamePascalCase}}{{/hasUseCase}}{{^hasUseCase}}No{{/hasUseCase}}Params param) async {
+        try {
+            state = AsyncLoading();
+            state = await AsyncValue.guard(() async {
+                final result = await {{methodName}}UseCase(param);
+                return result;
+            });
+        } catch (e, stk) {
+            state = AsyncError(e, stk);
+        }
+    }
+    {{/methods}}
+}

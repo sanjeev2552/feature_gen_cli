@@ -33,6 +33,10 @@ The JSON schema defines your feature's API methods and response structure.
 
 ```json
 {
+  "config": {
+    "bloc": true,
+    "riverpod": false
+  },
   "api": {
     "methods": {
       "getUser": {},
@@ -89,6 +93,13 @@ Feature Gen automatically detects nested JSON objects and lists of objects in yo
 
 ### Schema Sections
 
+#### `config`
+
+The `config` section determines which state management library to use for the presentation layer. One (and only one) of these must be set to `true`:
+
+- **`bloc`** — Generates BLoC, Event, and State files.
+- **`riverpod`** — Generates a `Notifier` class.
+
 #### `api.methods`
 
 Each key is a method name (camelCase). A method can optionally define:
@@ -144,10 +155,12 @@ lib/features/user/
 │       ├── update_user_usecase.dart
 │       └── delete_user_usecase.dart
 └── presentation/
-    └── bloc/
-        ├── user_bloc.dart
-        ├── user_event.dart
-        └── user_state.dart
+    ├── bloc/ (if enabled)
+    │   ├── user_bloc.dart
+    │   ├── user_event.dart
+    │   └── user_state.dart
+    └── riverpod/ (if enabled)
+        └── user_notifier.dart
 ```
 
 If any method has params/body/query, a shared base use-case is also created at:
@@ -158,7 +171,7 @@ lib/features/shared/usecase/base_usecase.dart
 
 ## What It Does Automatically
 
-1. **Checks & installs dependencies** — Adds missing packages (`flutter_bloc`, `freezed`, `get_it`, `injectable`, etc.) to the target project's `pubspec.yaml`.
+1. **Checks & installs dependencies** — Adds missing packages (`flutter_bloc`, `flutter_riverpod`, `freezed`, `get_it`, `injectable`, etc.) to the target project's `pubspec.yaml` based on your `config`.
 2. **Generates feature files** — Renders all Dart files from Mustache templates following clean architecture.
 3. **Runs `build_runner`** — Triggers code generation for Freezed models and JSON serialization.
 4. **Formats code** — Runs `dart format .` on the entire project.
@@ -168,7 +181,7 @@ lib/features/shared/usecase/base_usecase.dart
 These are automatically added if missing:
 
 **Runtime:**
-`get_it`, `injectable`, `flutter_bloc`, `bloc`, `equatable`, `freezed_annotation`, `json_annotation`
+`get_it`, `injectable`, `equatable`, `freezed_annotation`, `json_annotation`, `flutter_bloc` (if `bloc: true`), `flutter_riverpod` (if `riverpod: true`)
 
 **Dev:**
 `build_runner`, `injectable_generator`, `freezed`, `json_serializable`

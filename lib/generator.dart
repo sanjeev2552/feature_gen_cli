@@ -9,7 +9,8 @@ import 'package:mustache_template/mustache.dart';
 /// into Dart source files.
 ///
 /// The generator is file-system focused and deliberately avoids business logic.
-/// It expects a fully prepared [Context].
+/// It expects a fully prepared [Context] and respects the configured
+/// presentation layer (bloc or riverpod).
 class Generator {
   /// Creates directories and generates all boilerplate files for the feature.
   Future<void> generateFeature(Context context) async {
@@ -33,7 +34,8 @@ class Generator {
       '$basePath/domain/entities',
       '$basePath/domain/repositories',
       if (generateUseCase) '$basePath/domain/usecases',
-      '$basePath/presentation/bloc',
+      if (context.config.bloc == true) '$basePath/presentation/bloc',
+      if (context.config.riverpod == true) '$basePath/presentation/riverpod',
     ];
 
     if (generateUseCase) {
@@ -53,7 +55,7 @@ class Generator {
   }
 
   /// Renders all Mustache templates (model, entity, repository, datasource,
-  /// usecase, bloc, event, state) into the feature directory.
+  /// usecase, bloc/event/state, or riverpod notifier) into the feature directory.
   ///
   /// Each template receives a simple map to keep the generator decoupled
   /// from the Mustache engine.
@@ -136,48 +138,68 @@ class Generator {
       }
     }
 
-    // Bloc
-    renderTemplate(
-      '$templateBasePath/bloc/bloc.mustache',
-      '$basePath/presentation/bloc/${featureName}_bloc.dart',
-      {
-        ...context.toMap(),
-        "methods": context.methods
-            .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
-            .toList(),
-      },
-    );
+    if (context.config.bloc == true) {
+      // Bloc
+      renderTemplate(
+        '$templateBasePath/bloc/bloc.mustache',
+        '$basePath/presentation/bloc/${featureName}_bloc.dart',
+        {
+          ...context.toMap(),
+          "methods": context.methods
+              .map(
+                (e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()},
+              )
+              .toList(),
+        },
+      );
 
-    // Event
-    renderTemplate(
-      '$templateBasePath/bloc/event.mustache',
-      '$basePath/presentation/bloc/${featureName}_event.dart',
-      {
-        'name': context.name,
-        'projectName': context.projectName,
-        "methods": context.methods
-            .map(
-              (e) => {
-                ...e.toMap(),
-                "methodNameLowerCase": e.methodName.camelCaseToSnakeCase(),
-                'nameLowerCase': context.nameLowerCase,
-              },
-            )
-            .toList(),
-      },
-    );
+      // Event
+      renderTemplate(
+        '$templateBasePath/bloc/event.mustache',
+        '$basePath/presentation/bloc/${featureName}_event.dart',
+        {
+          'name': context.name,
+          'projectName': context.projectName,
+          "methods": context.methods
+              .map(
+                (e) => {
+                  ...e.toMap(),
+                  "methodNameLowerCase": e.methodName.camelCaseToSnakeCase(),
+                  'nameLowerCase': context.nameLowerCase,
+                },
+              )
+              .toList(),
+        },
+      );
 
-    // State
-    renderTemplate(
-      '$templateBasePath/bloc/state.mustache',
-      '$basePath/presentation/bloc/${featureName}_state.dart',
-      {
-        'name': context.name,
-        'nameLowerCase': context.nameLowerCase,
-        'nameCamelCase': context.nameCamelCase,
-        ...context.toMap(),
-      },
-    );
+      // State
+      renderTemplate(
+        '$templateBasePath/bloc/state.mustache',
+        '$basePath/presentation/bloc/${featureName}_state.dart',
+        {
+          'name': context.name,
+          'nameLowerCase': context.nameLowerCase,
+          'nameCamelCase': context.nameCamelCase,
+          ...context.toMap(),
+        },
+      );
+    }
+
+    if (context.config.riverpod == true) {
+      // Notifier
+      renderTemplate(
+        '$templateBasePath/riverpod/notifier.mustache',
+        '$basePath/presentation/riverpod/${featureName}_notifier.dart',
+        {
+          ...context.toMap(),
+          "methods": context.methods
+              .map(
+                (e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()},
+              )
+              .toList(),
+        },
+      );
+    }
   }
 
   /// Reads a `.mustache` template, injects [context] values, and writes to [outPath].

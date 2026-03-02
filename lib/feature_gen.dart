@@ -22,7 +22,10 @@ class FeatureGen {
       final context = await Parser().buildContext(featureName, schema);
 
       // Ensure required dependencies exist before generating files.
-      await CommandRunner().checkAndAddDeps(workingDirectory: context.projectRoot);
+      await CommandRunner().checkAndAddDeps(
+        config: context.config,
+        workingDirectory: context.projectRoot,
+      );
 
       // Generate feature files from mustache templates.
       await Generator().generateFeature(context);
