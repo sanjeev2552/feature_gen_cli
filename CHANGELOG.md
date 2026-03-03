@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2
+
+### Docs
+
+- **Example Files** — Added `example/example.dart` and `example/user_schema.json` to demonstrate CLI usage and provide a sample schema for feature generation.
+
 ## 1.2.1
 
 ### Refactor
