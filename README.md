@@ -5,13 +5,13 @@ A Dart CLI tool that generates clean-architecture feature modules for Flutter pr
 ## Installation
 
 ```bash
-dart pub global activate --source git https://github.com/sanjeev2552/feature_gen.git
+dart pub global activate feature_gen_cli
 ```
 
 ## Usage
 
 ```bash
-feature_gen <feature_name> <schema.json>
+feature_gen_cli <feature_name> <schema.json>
 ```
 
 ### Options
@@ -24,7 +24,7 @@ feature_gen <feature_name> <schema.json>
 ### Example
 
 ```bash
-feature_gen user schema.json
+feature_gen_cli user schema.json
 ```
 
 ## Schema Format
@@ -133,7 +133,7 @@ You can also use actual JSON values (e.g. `123` → `int`, `"hello"` → `String
 
 ## Generated Structure
 
-Running `feature_gen user schema.json` produces:
+Running `feature_gen_cli user schema.json` produces:
 
 ```
 lib/features/user/
@@ -190,7 +190,7 @@ These are automatically added if missing:
 
 ```
 feature_gen/
-├── bin/feature_gen.dart        # CLI entry point
+├── bin/feature_gen_cli.dart        # CLI entry point
 ├── lib/
 │   ├── feature_gen.dart        # Pipeline orchestrator
 │   ├── parser.dart             # JSON schema parser & context builder

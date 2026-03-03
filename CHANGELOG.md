@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.1
+
+### Refactor
+
+- **Package Rename** — Renamed the package and executable from `feature_gen` to `feature_gen_cli` across all source files, imports, CLI usage messages, and `pubspec.yaml`.
+
+### Docs
+
+- **Pubspec Metadata** — Added `repository`, `homepage`, and `issue_tracker` links to `pubspec.yaml`.
+
 ## 1.2.0
 
 ### Features
