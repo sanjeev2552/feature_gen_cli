@@ -1,8 +1,8 @@
 import 'package:args/args.dart';
-import 'package:feature_gen/command_helper.dart';
-import 'package:feature_gen/command_runner.dart';
-import 'package:feature_gen/generator.dart';
-import 'package:feature_gen/parser.dart';
+import 'package:feature_gen_cli/command_helper.dart';
+import 'package:feature_gen_cli/command_runner.dart';
+import 'package:feature_gen_cli/generator.dart';
+import 'package:feature_gen_cli/parser.dart';
 
 /// Orchestrates the full feature generation pipeline:
 /// parse → deps → generate → build_runner → format.

@@ -1,4 +1,4 @@
-name: feature_gen
+name: feature_gen_cli
 description: A command-line tool for generating feature modules.
 version: 1.2.0
 
@@ -20,4 +20,4 @@ dev_dependencies:
   test: ^1.25.6
 
 executables:
-  feature_gen:
+  feature_gen_cli:

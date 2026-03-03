@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:feature_gen/command_helper.dart';
-import 'package:feature_gen/types.dart';
-import 'package:feature_gen/yaml_helper.dart';
+import 'package:feature_gen_cli/command_helper.dart';
+import 'package:feature_gen_cli/types.dart';
+import 'package:feature_gen_cli/yaml_helper.dart';
 
 /// Executes shell commands for dependency management, build_runner, and formatting.
 ///

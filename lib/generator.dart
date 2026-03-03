@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:feature_gen/string_extension.dart';
-import 'package:feature_gen/types.dart';
+import 'package:feature_gen_cli/string_extension.dart';
+import 'package:feature_gen_cli/types.dart';
 import 'package:mustache_template/mustache.dart';
 
 /// Creates the feature directory structure and renders Mustache templates
@@ -18,11 +18,11 @@ class Generator {
     final basePath = '${context.projectRoot}/lib/features/$featureName';
     final generateUseCase = context.generateUseCase;
 
-    // Resolve templates from within the feature_gen package itself.
-    final packageUri = Uri.parse('package:feature_gen/');
+    // Resolve templates from within the feature_gen_cli package itself.
+    final packageUri = Uri.parse('package:feature_gen_cli/');
     final libUri = await Isolate.resolvePackageUri(packageUri);
     if (libUri == null) {
-      throw StateError('Could not resolve package:feature_gen – is the package activated?');
+      throw StateError('Could not resolve package:feature_gen_cli – is the package activated?');
     }
     final templateBasePath = libUri.resolve('template').toFilePath();
 

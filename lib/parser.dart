@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:feature_gen/command_helper.dart';
-import 'package:feature_gen/string_extension.dart';
-import 'package:feature_gen/types.dart';
-import 'package:feature_gen/yaml_helper.dart';
+import 'package:feature_gen_cli/command_helper.dart';
+import 'package:feature_gen_cli/string_extension.dart';
+import 'package:feature_gen_cli/types.dart';
+import 'package:feature_gen_cli/yaml_helper.dart';
 
 /// Parses JSON schema files and builds the template [Context] for code generation.
 ///

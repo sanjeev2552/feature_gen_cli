@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:feature_gen/command_helper.dart';
+import 'package:feature_gen_cli/command_helper.dart';
 import 'package:yaml/yaml.dart';
 
 /// Reads metadata (version, project name, dependencies) from `pubspec.yaml` files.
@@ -9,13 +9,13 @@ import 'package:yaml/yaml.dart';
 /// This helper isolates YAML parsing so other classes can remain focused
 /// on generation and CLI behavior.
 class YamlHelper {
-  /// Returns the version of the `feature_gen` package from its own pubspec.
+  /// Returns the version of the `feature_gen_cli` package from its own pubspec.
   Future<String?> getVersion() async {
-    final packageUri = Uri.parse('package:feature_gen/');
+    final packageUri = Uri.parse('package:feature_gen_cli/');
     final libUri = await Isolate.resolvePackageUri(packageUri);
 
     if (libUri == null) {
-      CommandHelper().error('Could not resolve package uri for package:feature_gen');
+      CommandHelper().error('Could not resolve package uri for package:feature_gen_cli');
       return null;
     }
 

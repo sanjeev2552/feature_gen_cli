@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:feature_gen/yaml_helper.dart';
+import 'package:feature_gen_cli/yaml_helper.dart';
 
 /// Handles styled console output (errors, success, warnings) and CLI help/version.
 ///
@@ -13,7 +13,7 @@ class CommandHelper {
         '''
 \x1B[31m$message\x1B[0m
 
-\x1B[31mRun 'dart tool/feature_gen.dart -h' for more information\x1B[0m''';
+\x1B[31mRun 'dart tool/feature_gen_cli.dart -h' for more information\x1B[0m''';
 
     stdout.writeln(error);
     exit(1);
@@ -38,14 +38,14 @@ class CommandHelper {
 
   /// Prints CLI usage information and exits.
   ///
-  /// Keep this aligned with the actual CLI flags in `bin/feature_gen.dart`.
+  /// Keep this aligned with the actual CLI flags in `bin/feature_gen_cli.dart`.
   void help() {
     final helpInfo = '''
 Manage your Flutter feature modules.
 
 Common commands:
 
-  dart tool/feature_gen.dart <feature_name> <schema.json>
+  dart tool/feature_gen_cli.dart <feature_name> <schema.json>
     Generate a new feature module using the provided feature name and schema definition.
 
 Required parameters:
@@ -62,9 +62,9 @@ Global options:
       --version:     Print the current version.
   
 Example:
-  dart tool/feature_gen.dart example schema.json
+  dart tool/feature_gen_cli.dart example schema.json
 
-Run 'dart tool/feature_gen.dart -h' for more information''';
+Run 'dart tool/feature_gen_cli.dart -h' for more information''';
 
     stdout.writeln(helpInfo);
     exit(0);
