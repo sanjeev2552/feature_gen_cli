@@ -9,14 +9,15 @@ import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/bloc/{{n
 @injectable
 class {{name}}Bloc extends Bloc<{{name}}Event, {{name}}State> {
   {{#methods}}
-  final {{methodNamePascalCase}}UseCase {{methodName}}UseCase;
+  final {{methodNamePascalCase}}UseCase _{{methodName}}UseCase;
   {{/methods}}
 
   {{name}}Bloc({
     {{#methods}}
-    required this.{{methodName}}UseCase,
+    required {{methodNamePascalCase}}UseCase {{methodName}}UseCase,
     {{/methods}}
-  }) : super({{name}}State.initial()) {
+  }) : {{#methods}}_{{methodName}}UseCase = {{methodName}}UseCase,{{/methods}}
+       super({{name}}State.initial()) {
     {{#methods}}
     on<{{methodNamePascalCase}}Event>({{methodName}});
     {{/methods}}
@@ -26,7 +27,7 @@ class {{name}}Bloc extends Bloc<{{name}}Event, {{name}}State> {
   Future<void> {{methodName}}({{methodNamePascalCase}}Event event, Emitter<{{name}}State> emit) async {
     emit({{name}}State.loading());
     try {
-      final result = await {{methodName}}UseCase(event.param);
+      final result = await _{{methodName}}UseCase(event.param);
       emit({{name}}State.success(result));
     } catch (e) {
       emit({{name}}State.error(e.toString()));

@@ -36,11 +36,16 @@ class Generator {
       if (generateUseCase) '$basePath/domain/usecases',
       if (context.config.bloc == true) '$basePath/presentation/bloc',
       if (context.config.riverpod == true) '$basePath/presentation/riverpod',
+      if (context.config.bloc == true || context.config.riverpod == true)
+        '$basePath/presentation/screen',
     ];
 
     if (generateUseCase) {
       folders.add('${context.projectRoot}/lib/features/shared/usecase');
     }
+
+    // Create core folders
+    folders.add('${context.projectRoot}/lib/core/di');
 
     for (var folder in folders) {
       Directory(folder).createSync(recursive: true);
@@ -65,6 +70,13 @@ class Generator {
     required String templateBasePath,
     required Context context,
   }) {
+    // Injector
+    renderTemplate(
+      '$templateBasePath/injector.mustache',
+      '${context.projectRoot}/lib/core/di/injector.dart',
+      {"projectName": context.projectName},
+    );
+
     // Model
     renderTemplate(
       '$templateBasePath/data/model.mustache',
@@ -142,7 +154,7 @@ class Generator {
     if (context.config.bloc == true) {
       // Bloc
       renderTemplate(
-        '$templateBasePath/bloc/bloc.mustache',
+        '$templateBasePath/presentation/bloc/bloc.mustache',
         '$basePath/presentation/bloc/${featureName}_bloc.dart',
         {
           ...context.toMap(),
@@ -156,7 +168,7 @@ class Generator {
 
       // Event
       renderTemplate(
-        '$templateBasePath/bloc/event.mustache',
+        '$templateBasePath/presentation/bloc/event.mustache',
         '$basePath/presentation/bloc/${featureName}_event.dart',
         {
           'name': context.name,
@@ -175,7 +187,7 @@ class Generator {
 
       // State
       renderTemplate(
-        '$templateBasePath/bloc/state.mustache',
+        '$templateBasePath/presentation/bloc/state.mustache',
         '$basePath/presentation/bloc/${featureName}_state.dart',
         {
           'name': context.name,
@@ -185,12 +197,19 @@ class Generator {
           ...context.toMap(),
         },
       );
+
+      // Screen
+      renderTemplate(
+        '$templateBasePath/presentation/screen/screen_bloc.mustache',
+        '$basePath/presentation/screen/${featureName}_screen.dart',
+        context.toMap(),
+      );
     }
 
     if (context.config.riverpod == true) {
       // Notifier
       renderTemplate(
-        '$templateBasePath/riverpod/notifier.mustache',
+        '$templateBasePath/presentation/riverpod/notifier.mustache',
         '$basePath/presentation/riverpod/${featureName}_notifier.dart',
         {
           ...context.toMap(),
@@ -200,6 +219,13 @@ class Generator {
               )
               .toList(),
         },
+      );
+
+      // Screen
+      renderTemplate(
+        '$templateBasePath/presentation/screen/screen_riverpod.mustache',
+        '$basePath/presentation/screen/${featureName}_screen.dart',
+        context.toMap(),
       );
     }
   }

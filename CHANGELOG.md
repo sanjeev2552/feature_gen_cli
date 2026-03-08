@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+### Improvements
+
+- **Constructor Initializer Lists** — BLoC and Riverpod templates now use explicit initializer lists (`_useCase = useCase`) instead of `this._useCase` for constructor parameters, improving readability of generated code.
+- **Screen Template** — Added `presentation/screen/` generation for feature scaffolding.
+- **Injector Template** — Added `lib/core/di/injector.dart` generation for dependency injection setup.
+
 ## 1.2.3+1
 
 ### Docs

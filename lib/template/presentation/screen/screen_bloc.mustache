@@ -1,0 +1,16 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:{{projectName}}/core/di/injector.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/bloc/{{nameLowerCase}}_bloc.dart';
+
+class {{name}}Screen extends StatelessWidget {
+    const {{name}}Screen({super.key});
+
+    @override
+    Widget build(BuildContext context) {
+        return BlocProvider(
+            create: (context) => sl<{{name}}Bloc>(),
+            child: const Placeholder(),
+        );
+    }
+}

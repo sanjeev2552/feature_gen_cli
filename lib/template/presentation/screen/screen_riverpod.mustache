@@ -1,0 +1,14 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/riverpod/{{nameLowerCase}}_notifier.dart';
+
+class {{name}}Screen extends ConsumerWidget {
+    const {{name}}Screen({super.key});
+
+    @override
+    Widget build(BuildContext context, WidgetRef ref) {
+        final {{nameCamelCase}}Notifier = ref.read({{nameLowerCase}}Provider.notifier);
+
+        return const Placeholder();
+    }
+}

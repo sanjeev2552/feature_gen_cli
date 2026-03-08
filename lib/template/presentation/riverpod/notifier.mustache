@@ -1,24 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:injectable/injectable.dart';
+import 'package:{{projectName}}/core/di/injector.dart';
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
 {{#methods}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
 {{^hasUseCase}}
-import 'package:{{projectName}}/features/shared/usecase/base_usecase.dart';
+import 'package:{{projectName}}/features/shared/usecase/usecase.dart';
 {{/hasUseCase}}
 {{/methods}}
 
 @injectable
 class {{name}}Notifier extends AsyncNotifier<{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?> {
     {{#methods}}
-    final {{methodNamePascalCase}}UseCase {{methodName}}UseCase;
+    final {{methodNamePascalCase}}UseCase _{{methodName}}UseCase;
     {{/methods}}
 
     {{name}}Notifier({
         {{#methods}}
-        required this.{{methodName}}UseCase,
+        required {{methodNamePascalCase}}UseCase {{methodName}}UseCase,
         {{/methods}}
-    });
+    }) : {{#methods}}_{{methodName}}UseCase = {{methodName}}UseCase,{{/methods}}
+    super();
 
     @override
     Future<{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?> build() async {
@@ -30,7 +32,7 @@ class {{name}}Notifier extends AsyncNotifier<{{#isList}}List<{{/isList}}{{name}}
         try {
             state = AsyncLoading();
             state = await AsyncValue.guard(() async {
-                final result = await {{methodName}}UseCase(param);
+                final result = await _{{methodName}}UseCase(param);
                 return result;
             });
         } catch (e, stk) {
@@ -39,3 +41,7 @@ class {{name}}Notifier extends AsyncNotifier<{{#isList}}List<{{/isList}}{{name}}
     }
     {{/methods}}
 }
+
+final {{nameCamelCase}}Provider = AsyncNotifierProvider<{{name}}Notifier, {{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?>(
+    () => sl<{{name}}Notifier>(),
+);

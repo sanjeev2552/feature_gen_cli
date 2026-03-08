@@ -153,7 +153,11 @@ You can also use actual JSON values (e.g. `123` → `int`, `"hello"` → `String
 Running `feature_gen_cli user schema.json` produces:
 
 ```
-lib/features/user/
+lib/
+├── core/
+│   └── di/
+│       └── injector.dart
+└── features/user/
 ├── data/
 │   ├── datasources/
 │   │   └── user_remote_datasource.dart
@@ -176,8 +180,10 @@ lib/features/user/
     │   ├── user_bloc.dart
     │   ├── user_event.dart
     │   └── user_state.dart
-    └── riverpod/ (if enabled)
-        └── user_notifier.dart
+    ├── riverpod/ (if enabled)
+    │   └── user_notifier.dart
+    └── screen/
+        └── user_screen.dart
 ```
 
 If any method has params/body/query, a shared base use-case is also created at:
