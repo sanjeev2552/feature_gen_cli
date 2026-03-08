@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+### Docs
+
+- **Pub Badge URL Fix** — Updated the pub.dev badge image URL in `README.md` to point to `feature_gen_cli.svg` instead of the old package name.
+
 ## 1.3.0
 
 ### Improvements
