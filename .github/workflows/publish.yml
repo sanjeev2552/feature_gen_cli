@@ -15,6 +15,13 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
+      - name: Configure pub credentials
+        run: |
+          mkdir -p ~/.config/dart
+          printf '%s' "${{ secrets.PUB_CREDENTIALS_JSON }}" > ~/.config/dart/pub-credentials.json
+          printf '%s' "${{ secrets.PUB_TOKEN_JSON }}" > ~/.config/dart/token.json
+          chmod 600 ~/.config/dart/pub-credentials.json ~/.config/dart/token.json
+
       - name: Install dependencies
         run: dart pub get
 
@@ -29,5 +36,3 @@ jobs:
 
       - name: Publish
         run: dart pub publish -f
-        env:
-          PUB_DEV_TOKEN: ${{ secrets.PUB_DEV_TOKEN }}
