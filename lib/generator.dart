@@ -14,7 +14,7 @@ import 'package:mustache_template/mustache.dart';
 /// overwritten when the same paths are produced.
 class Generator {
   /// Creates directories and generates all boilerplate files for the feature.
-  Future<void> generateFeature(Context context) async {
+  Future<void> generateFeature(Context context, {bool overwrite = false}) async {
     final featureName = context.nameLowerCase;
     final basePath = '${context.projectRoot}/lib/features/$featureName';
     final generateUseCase = context.generateUseCase;
@@ -57,6 +57,7 @@ class Generator {
       basePath: basePath,
       templateBasePath: templateBasePath,
       context: context,
+      overwrite: overwrite,
     );
   }
 
@@ -70,12 +71,14 @@ class Generator {
     required String basePath,
     required String templateBasePath,
     required Context context,
+    required bool overwrite,
   }) {
     // Injector
     renderTemplate(
       '$templateBasePath/injector.mustache',
       '${context.projectRoot}/lib/core/di/injector.dart',
       {"projectName": context.projectName},
+      overwrite: overwrite,
     );
 
     // Model
@@ -83,6 +86,7 @@ class Generator {
       '$templateBasePath/data/model.mustache',
       '$basePath/data/models/${featureName}_model.dart',
       context.toMap(),
+      overwrite: overwrite,
     );
 
     // Entity
@@ -90,6 +94,7 @@ class Generator {
       '$templateBasePath/domain/entity.mustache',
       '$basePath/domain/entities/${featureName}_entity.dart',
       context.toMap(),
+      overwrite: overwrite,
     );
 
     // Repository
@@ -102,6 +107,7 @@ class Generator {
             .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
             .toList(),
       },
+      overwrite: overwrite,
     );
 
     // Repository Impl
@@ -114,6 +120,7 @@ class Generator {
             .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
             .toList(),
       },
+      overwrite: overwrite,
     );
 
     // Remote Datasource
@@ -126,6 +133,7 @@ class Generator {
             .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
             .toList(),
       },
+      overwrite: overwrite,
     );
 
     // Use Cases
@@ -134,6 +142,7 @@ class Generator {
         '$templateBasePath/usecase.mustache',
         '${context.projectRoot}/lib/features/shared/usecase/usecase.dart',
         context.toMap(),
+        overwrite: overwrite,
       );
 
       for (var method in context.methods) {
@@ -148,6 +157,7 @@ class Generator {
             'projectName': context.projectName,
             ...method.toMap(),
           },
+          overwrite: overwrite,
         );
       }
     }
@@ -165,6 +175,7 @@ class Generator {
               )
               .toList(),
         },
+        overwrite: overwrite,
       );
 
       // Event
@@ -184,6 +195,7 @@ class Generator {
               )
               .toList(),
         },
+        overwrite: overwrite,
       );
 
       // State
@@ -197,6 +209,7 @@ class Generator {
           'nameCamelCase': context.nameCamelCase,
           ...context.toMap(),
         },
+        overwrite: overwrite,
       );
 
       // Screen
@@ -204,6 +217,7 @@ class Generator {
         '$templateBasePath/presentation/screen/screen_bloc.mustache',
         '$basePath/presentation/screen/${featureName}_screen.dart',
         context.toMap(),
+        overwrite: overwrite,
       );
     }
 
@@ -220,6 +234,7 @@ class Generator {
               )
               .toList(),
         },
+        overwrite: overwrite,
       );
 
       // Screen
@@ -227,17 +242,28 @@ class Generator {
         '$templateBasePath/presentation/screen/screen_riverpod.mustache',
         '$basePath/presentation/screen/${featureName}_screen.dart',
         context.toMap(),
+        overwrite: overwrite,
       );
     }
   }
 
-  /// Reads a `.mustache` template, injects [context] values, and writes to [outPath].
+  /// Reads a `.mustache` template, injects [context] values, and writes to [outPath]
+  /// only if it does not already exist.
   ///
   /// This is intentionally synchronous to keep file creation predictable.
-  void renderTemplate(String templatePath, String outPath, Map<String, dynamic> context) {
+  void renderTemplate(
+    String templatePath,
+    String outPath,
+    Map<String, dynamic> context, {
+    required bool overwrite,
+  }) {
+    final outFile = File(outPath);
+    if (!overwrite && outFile.existsSync()) {
+      return;
+    }
     final templateString = File(templatePath).readAsStringSync();
     final template = Template(templateString);
     final result = template.renderString(context);
-    File(outPath).writeAsStringSync(result);
+    outFile.writeAsStringSync(result);
   }
 }

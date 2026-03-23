@@ -59,7 +59,8 @@ Required parameters:
 
 Global options:
   -h, --help        Show this help message.
-      --version:     Print the current version.
+  -o, --overwrite   Overwrite existing generated files.
+      --version:    Print the current version.
   
 Example:
   dart tool/feature_gen_cli.dart example schema.json

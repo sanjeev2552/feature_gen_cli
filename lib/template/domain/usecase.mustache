@@ -5,7 +5,7 @@ import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/repositories/{
 
 {{#hasParams}}
 {{#params}}
-class {{name}}{{#isRoot}}PathParams{{/isRoot}} {
+class {{name}}{{#isRoot}}PathParams{{/isRoot}} extends PathParams {
     {{#properties}}
     final {{{type}}}? {{name}};
     {{/properties}}
@@ -15,13 +15,22 @@ class {{name}}{{#isRoot}}PathParams{{/isRoot}} {
         this.{{name}},
         {{/properties}}
     });
+
+    @override
+    Map<String, dynamic> toJson() {
+        return {
+            {{#properties}}
+            '{{name}}': {{name}},
+            {{/properties}}
+        };
+    }
 }
 {{/params}}
 {{/hasParams}}
 
 {{#hasBody}}
 {{#body}}
-class {{name}}{{#isRoot}}BodyParams{{/isRoot}} {
+class {{name}}{{#isRoot}}BodyParams{{/isRoot}} extends BodyParams {
     {{#properties}}
     final {{{type}}}? {{name}};
     {{/properties}}
@@ -31,13 +40,22 @@ class {{name}}{{#isRoot}}BodyParams{{/isRoot}} {
         this.{{name}},
         {{/properties}}
     });
+
+    @override
+    Map<String, dynamic> toJson() {
+        return {
+            {{#properties}}
+            '{{name}}': {{name}},
+            {{/properties}}
+        };
+    }
 }
 {{/body}}
 {{/hasBody}}
 
 {{#hasQuery}}
 {{#query}}
-class {{name}}{{#isRoot}}QueryParams{{/isRoot}} {
+class {{name}}{{#isRoot}}QueryParams{{/isRoot}} extends QueryParams {
     {{#properties}}
     final {{{type}}}? {{name}};
     {{/properties}}
@@ -47,6 +65,15 @@ class {{name}}{{#isRoot}}QueryParams{{/isRoot}} {
         this.{{name}},
         {{/properties}}
     });
+
+    @override
+    Map<String, dynamic> toJson() {
+        return {
+            {{#properties}}
+            '{{name}}': {{name}},
+            {{/properties}}
+        };
+    }
 }
 {{/query}}
 {{/hasQuery}}

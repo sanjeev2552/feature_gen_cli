@@ -2,6 +2,18 @@ abstract class UseCase<T, Params> {
     Future<T> call(Params params);
 }
 
+abstract class BodyParams {
+    Map<String, dynamic> toJson();
+}
+
+abstract class PathParams {
+    Map<String, dynamic> toJson();
+}
+
+abstract class QueryParams {
+    Map<String, dynamic> toJson();
+}
+
 class NoParams {
     const NoParams();
 }

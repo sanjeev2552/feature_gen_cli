@@ -16,6 +16,7 @@ class FeatureGen {
   Future<void> generate(ArgResults results) async {
     final featureName = results.rest.first;
     CommandHelper().success('Generating feature: $featureName', shouldExit: false);
+    final overwrite = results['overwrite'] == true;
 
     try {
       // Parse the user's schema and translate it into a template context.
@@ -29,7 +30,7 @@ class FeatureGen {
       );
 
       // Generate feature files from mustache templates.
-      await Generator().generateFeature(context);
+      await Generator().generateFeature(context, overwrite: overwrite);
 
       // Run code generation if needed (freezed/json_serializable).
       final exitCode = await CommandRunner().runBuildRunner(workingDirectory: context.projectRoot);

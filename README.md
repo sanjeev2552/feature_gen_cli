@@ -15,6 +15,9 @@ dart pub global activate feature_gen_cli
 # 2. Run
 feature_gen_cli <feature_name> <schema.json>
 # Example: feature_gen_cli user example/user_schema.json
+
+# Overwrite existing generated files (optional)
+feature_gen_cli <feature_name> <schema.json> --overwrite
 ```
 
 ## Schema Reference
@@ -47,6 +50,10 @@ Running the CLI produces a complete clean-architecture module in `lib/features/<
 - **presentation/**: BLoC/Notifier and screens.
 
 The CLI automatically adds missing dependencies, runs `build_runner`, and formats the generated code.
+
+## Overwrite Behavior
+
+By default, the CLI only generates missing files and will not overwrite existing files. Use `--overwrite` (or `-o`) to force regeneration.
 
 ## Troubleshooting
 

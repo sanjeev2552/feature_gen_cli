@@ -11,6 +11,7 @@ import 'package:feature_gen_cli/feature_gen.dart';
 Future<void> main(List<String> arguments) async {
   final parser = ArgParser()
     ..addFlag('help', abbr: 'h')
+    ..addFlag('overwrite', abbr: 'o', help: 'Overwrite existing generated files.')
     ..addFlag('version', abbr: 'v');
 
   final results = parser.parse(arguments);

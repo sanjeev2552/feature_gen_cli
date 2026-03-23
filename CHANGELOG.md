@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.4
+
+### Features
+
+- **Safe Generation** — The generator now only creates missing files by default, preserving user edits.
+- **Overwrite Flag** — Added `--overwrite` (`-o`) to force regeneration of existing files.
+- **Param Base Classes** — Generated path/body/query params now extend shared base classes and implement `toJson()`.
+
 ## 1.3.3
 
 ### Docs
