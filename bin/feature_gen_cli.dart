@@ -1,4 +1,4 @@
-import 'package:args/args.dart';
+import 'package:feature_gen_cli/cli_args.dart';
 import 'package:feature_gen_cli/command_helper.dart';
 import 'package:feature_gen_cli/feature_gen.dart';
 
@@ -9,10 +9,7 @@ import 'package:feature_gen_cli/feature_gen.dart';
 /// Run this from a Flutter project root so relative schema paths and
 /// `pubspec.yaml` resolution work as expected.
 Future<void> main(List<String> arguments) async {
-  final parser = ArgParser()
-    ..addFlag('help', abbr: 'h')
-    ..addFlag('overwrite', abbr: 'o', help: 'Overwrite existing generated files.')
-    ..addFlag('version', abbr: 'v');
+  final parser = buildArgParser();
 
   final results = parser.parse(arguments);
 
@@ -27,9 +24,7 @@ Future<void> main(List<String> arguments) async {
   }
 
   if (results.rest.length < 2) {
-    CommandHelper().error(
-      'Usage: feature_gen_cli <feature_name> <schema.json>',
-    );
+    CommandHelper().error('Usage: feature_gen_cli <feature_name> <schema.json>');
     return;
   }
 

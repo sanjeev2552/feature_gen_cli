@@ -70,6 +70,8 @@ If you find this package helpful, please consider giving it a like on [pub.dev](
 - Run tests: `dart test`
 - Format code: `dart format .`
 
+Note: The test suite is pure unit tests and avoids running external commands.
+
 ## License
 
 MIT

@@ -9,12 +9,29 @@ import 'package:feature_gen_cli/yaml_helper.dart';
 /// All external process calls are funneled through this class so logging and
 /// error handling stay consistent across the CLI. These operations mutate the
 /// target project's `pubspec.yaml` and generated files.
+/// Signature for running a process, injected for testability.
+typedef ProcessRunner = Future<ProcessResult> Function(
+  String executable,
+  List<String> args, {
+  String? workingDirectory,
+});
+
 class CommandRunner {
+  /// Creates a runner with optional injected process/YAML helpers for tests.
+  CommandRunner({ProcessRunner? processRunner, YamlHelper? yamlHelper, CommandHelper? commandHelper})
+      : _processRunner = processRunner ?? Process.run,
+        _yamlHelper = yamlHelper ?? YamlHelper(),
+        _commandHelper = commandHelper ?? CommandHelper();
+
+  final ProcessRunner _processRunner;
+  final YamlHelper _yamlHelper;
+  final CommandHelper _commandHelper;
+
   /// Runs [executable] with [args] and forwards output. Returns the exit code.
   ///
   /// Output is streamed to stdout/stderr so callers can surface actionable logs.
   Future<int> _runCommand(String executable, List<String> args, {String? workingDirectory}) async {
-    final result = await Process.run(executable, args, workingDirectory: workingDirectory);
+    final result = await _processRunner(executable, args, workingDirectory: workingDirectory);
 
     if ((result.stdout as String).isNotEmpty) {
       stdout.writeln(result.stdout);
@@ -49,7 +66,7 @@ class CommandRunner {
     ];
 
     try {
-      final (dependencies, devDependencies) = await YamlHelper().getDependencies(
+      final (dependencies, devDependencies) = await _yamlHelper.getDependencies(
         workingDirectory: workingDirectory,
       );
 
@@ -79,13 +96,13 @@ class CommandRunner {
         ], workingDirectory: workingDirectory);
 
         if (exitCode != 0) {
-          CommandHelper().warning('Failed to add dependencies');
+          _commandHelper.warning('Failed to add dependencies');
         } else {
-          CommandHelper().success('Dependencies added successfully', shouldExit: false);
+          _commandHelper.success('Dependencies added successfully', shouldExit: false);
         }
       }
     } catch (e) {
-      CommandHelper().warning('Could not check dependencies: $e');
+      _commandHelper.warning('Could not check dependencies: $e');
     }
   }
 
@@ -103,7 +120,7 @@ class CommandRunner {
     ], workingDirectory: workingDirectory);
 
     if (buildExitCode != 0) {
-      CommandHelper().warning('build_runner failed with exit code $buildExitCode');
+      _commandHelper.warning('build_runner failed with exit code $buildExitCode');
       return buildExitCode;
     }
 

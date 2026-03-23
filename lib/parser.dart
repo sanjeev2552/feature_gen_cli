@@ -14,11 +14,16 @@ import 'package:feature_gen_cli/yaml_helper.dart';
 /// enforces presentation configuration. The current working directory is used
 /// as the target project root for `pubspec.yaml` lookup.
 class Parser {
+  /// Creates a parser with an injectable [CommandHelper] for test reporting.
+  Parser({CommandHelper? commandHelper}) : _commandHelper = commandHelper ?? CommandHelper();
+
+  final CommandHelper _commandHelper;
+
   /// Reads and deserialises the JSON schema file at [path] into a [Schema].
   Schema parse(String path) {
     final file = File(path);
     if (!file.existsSync()) {
-      CommandHelper().error('Schema file not found: $path');
+      _commandHelper.error('Schema file not found: $path');
     }
     final json = jsonDecode(file.readAsStringSync());
     return Schema.fromJson(json);
@@ -196,23 +201,23 @@ class Parser {
   /// CLI output.
   bool validateSchema(Schema schema) {
     if (schema.api == null) {
-      CommandHelper().error('Schema is not valid. "api" is required.');
+      _commandHelper.error('Schema is not valid. "api" is required.');
       return false;
     }
     if (schema.api?.methods == null) {
-      CommandHelper().error('Schema is not valid. "api.methods" is required.');
+      _commandHelper.error('Schema is not valid. "api.methods" is required.');
       return false;
     }
     if (schema.response == null) {
-      CommandHelper().error('Schema is not valid. "response" is required.');
+      _commandHelper.error('Schema is not valid. "response" is required.');
       return false;
     }
     if (schema.config == null) {
-      CommandHelper().error('Schema is not valid. "config" is required.');
+      _commandHelper.error('Schema is not valid. "config" is required.');
       return false;
     }
     if (schema.config!.bloc == null && schema.config!.riverpod == null) {
-      CommandHelper().error('Schema is not valid. "config.bloc" or "config.riverpod" is required.');
+      _commandHelper.error('Schema is not valid. "config.bloc" or "config.riverpod" is required.');
       return false;
     }
     return true;

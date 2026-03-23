@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.5
+
+### Tests
+
+- **Comprehensive Unit Tests** — Added grouped unit tests covering parser, generator, CLI overwrite flag, command runner behavior, and string/type helpers.
+
+### Docs
+
+- **Dartdoc Updates** — Documented new injectable seams and CLI arg builder for testing.
+- **README Note** — Clarified the test suite runs as pure unit tests without external commands.
+
 ## 1.3.4
 
 ### Features
