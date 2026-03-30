@@ -73,70 +73,116 @@ class Generator {
     required Context context,
     required bool overwrite,
   }) {
-    // Injector
+    // ── Shared helpers ────────────────────────────────────────────────────
+
+    // Deduplicated list of response entities used for import generation.
+    // In single-response mode this is just the one feature entity.
+    final responseEntities = _buildResponseEntities(context);
+
+    // Common enriched methods map (adds methodNameLowerCase + response fields).
+    List<Map<String, dynamic>> enrichedMethods(List<ContextMethod> methods) {
+      return methods
+          .map(
+            (e) => {
+              ...e.toMap(),
+              'methodNameLowerCase': e.methodName.camelCaseToSnakeCase(),
+            },
+          )
+          .toList();
+    }
+
+    // Root context additions shared across templates.
+    Map<String, dynamic> baseCtx() => {
+      ...context.toMap(),
+      'featureNameLower': featureName,
+      'responseEntities': responseEntities,
+    };
+
+    // ── Injector ──────────────────────────────────────────────────────────
     renderTemplate(
       '$templateBasePath/injector.mustache',
       '${context.projectRoot}/lib/core/di/injector.dart',
-      {"projectName": context.projectName},
+      {'projectName': context.projectName},
       overwrite: overwrite,
     );
 
-    // Model
-    renderTemplate(
-      '$templateBasePath/data/model.mustache',
-      '$basePath/data/models/${featureName}_model.dart',
-      context.toMap(),
-      overwrite: overwrite,
-    );
+    // ── Model & Entity ────────────────────────────────────────────────────
+    if (context.isMultiResponse) {
+      // One entity file + one model file per named response.
+      for (final entity in context.entities) {
+        renderTemplate(
+          '$templateBasePath/domain/entity.mustache',
+          '$basePath/domain/entities/${entity.nameLower}_entity.dart',
+          entity.toMap(),
+          overwrite: overwrite,
+        );
 
-    // Entity
-    renderTemplate(
-      '$templateBasePath/domain/entity.mustache',
-      '$basePath/domain/entities/${featureName}_entity.dart',
-      context.toMap(),
-      overwrite: overwrite,
-    );
+        renderTemplate(
+          '$templateBasePath/data/model.mustache',
+          '$basePath/data/models/${entity.nameLower}_model.dart',
+          {
+            ...entity.toMap(),
+            'nameLowerCase': entity.nameLower,
+            'featureNameLower': featureName,
+            'projectName': context.projectName,
+          },
+          overwrite: overwrite,
+        );
+      }
+    } else {
+      // Single-response: original behaviour.
+      renderTemplate(
+        '$templateBasePath/data/model.mustache',
+        '$basePath/data/models/${featureName}_model.dart',
+        {
+          ...context.toMap(),
+          'featureNameLower': featureName,
+        },
+        overwrite: overwrite,
+      );
 
-    // Repository
+      renderTemplate(
+        '$templateBasePath/domain/entity.mustache',
+        '$basePath/domain/entities/${featureName}_entity.dart',
+        context.toMap(),
+        overwrite: overwrite,
+      );
+    }
+
+    // ── Repository (abstract) ─────────────────────────────────────────────
     renderTemplate(
       '$templateBasePath/domain/repository.mustache',
       '$basePath/domain/repositories/${featureName}_repository.dart',
       {
-        ...context.toMap(),
-        "methods": context.methods
-            .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
-            .toList(),
+        ...baseCtx(),
+        'methods': enrichedMethods(context.methods),
       },
       overwrite: overwrite,
     );
 
-    // Repository Impl
+    // ── Repository Impl ───────────────────────────────────────────────────
     renderTemplate(
       '$templateBasePath/data/repository_impl.mustache',
       '$basePath/data/repositories/${featureName}_repository_impl.dart',
       {
-        ...context.toMap(),
-        "methods": context.methods
-            .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
-            .toList(),
+        ...baseCtx(),
+        'methods': enrichedMethods(context.methods),
       },
       overwrite: overwrite,
     );
 
-    // Remote Datasource
+    // ── Remote Datasource ─────────────────────────────────────────────────
     renderTemplate(
       '$templateBasePath/data/remote_datasource.mustache',
       '$basePath/data/datasources/${featureName}_remote_datasource.dart',
       {
-        ...context.toMap(),
-        "methods": context.methods
-            .map((e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()})
-            .toList(),
+        ...baseCtx(),
+        'methods': enrichedMethods(context.methods),
       },
       overwrite: overwrite,
     );
 
-    // Use Cases
+    // ── Use Cases ─────────────────────────────────────────────────────────
     if (context.generateUseCase) {
       renderTemplate(
         '$templateBasePath/usecase.mustache',
@@ -155,6 +201,7 @@ class Generator {
             'nameLowerCase': context.nameLowerCase,
             'nameCamelCase': context.nameCamelCase,
             'projectName': context.projectName,
+            'isMultiResponse': context.isMultiResponse,
             ...method.toMap(),
           },
           overwrite: overwrite,
@@ -162,57 +209,42 @@ class Generator {
       }
     }
 
+    // ── Presentation — Bloc ───────────────────────────────────────────────
     if (context.config.bloc == true) {
-      // Bloc
       renderTemplate(
         '$templateBasePath/presentation/bloc/bloc.mustache',
         '$basePath/presentation/bloc/${featureName}_bloc.dart',
         {
-          ...context.toMap(),
-          "methods": context.methods
-              .map(
-                (e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()},
-              )
-              .toList(),
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
         },
         overwrite: overwrite,
       );
 
-      // Event
       renderTemplate(
         '$templateBasePath/presentation/bloc/event.mustache',
         '$basePath/presentation/bloc/${featureName}_event.dart',
         {
           'name': context.name,
           'projectName': context.projectName,
-          "methods": context.methods
-              .map(
-                (e) => {
-                  ...e.toMap(),
-                  "methodNameLowerCase": e.methodName.camelCaseToSnakeCase(),
-                  'nameLowerCase': context.nameLowerCase,
-                },
-              )
-              .toList(),
+          'methods': enrichedMethods(context.methods).map((e) => {
+            ...e,
+            'nameLowerCase': context.nameLowerCase,
+          }).toList(),
         },
         overwrite: overwrite,
       );
 
-      // State
       renderTemplate(
         '$templateBasePath/presentation/bloc/state.mustache',
         '$basePath/presentation/bloc/${featureName}_state.dart',
         {
-          'name': context.name,
-          'isList': context.isList,
-          'nameLowerCase': context.nameLowerCase,
-          'nameCamelCase': context.nameCamelCase,
-          ...context.toMap(),
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
         },
         overwrite: overwrite,
       );
 
-      // Screen
       renderTemplate(
         '$templateBasePath/presentation/screen/screen_bloc.mustache',
         '$basePath/presentation/screen/${featureName}_screen.dart',
@@ -221,23 +253,18 @@ class Generator {
       );
     }
 
+    // ── Presentation — Riverpod ───────────────────────────────────────────
     if (context.config.riverpod == true) {
-      // Notifier
       renderTemplate(
         '$templateBasePath/presentation/riverpod/notifier.mustache',
         '$basePath/presentation/riverpod/${featureName}_notifier.dart',
         {
-          ...context.toMap(),
-          "methods": context.methods
-              .map(
-                (e) => {...e.toMap(), "methodNameLowerCase": e.methodName.camelCaseToSnakeCase()},
-              )
-              .toList(),
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
         },
         overwrite: overwrite,
       );
 
-      // Screen
       renderTemplate(
         '$templateBasePath/presentation/screen/screen_riverpod.mustache',
         '$basePath/presentation/screen/${featureName}_screen.dart',
@@ -245,6 +272,25 @@ class Generator {
         overwrite: overwrite,
       );
     }
+  }
+
+  /// Builds a deduplicated list of `{name, nameLower}` maps for every distinct
+  /// entity the methods return.
+  ///
+  /// In single-response mode this always contains exactly one entry (the
+  /// feature entity itself so existing templates remain unchanged).
+  /// In multi-response mode it is derived from the declared [Context.entities].
+  List<Map<String, dynamic>> _buildResponseEntities(Context context) {
+    if (!context.isMultiResponse) {
+      return [
+        {'name': context.name, 'nameLower': context.nameLowerCase},
+      ];
+    }
+
+    // Return all entities (they are already unique by construction).
+    return context.entities
+        .map((e) => {'name': e.name, 'nameLower': e.nameLower})
+        .toList();
   }
 
   /// Reads a `.mustache` template, injects [context] values, and writes to [outPath]

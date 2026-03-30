@@ -1,6 +1,13 @@
 import 'package:injectable/injectable.dart';
 import 'package:{{projectName}}/features/shared/usecase/usecase.dart';
+{{^isMultiResponse}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+{{#hasResponse}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{responseEntityNameLower}}_entity.dart';
+{{/hasResponse}}
+{{/isMultiResponse}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/repositories/{{nameLowerCase}}_repository.dart';
 
 {{#hasParams}}
@@ -104,6 +111,7 @@ class {{methodNamePascalCase}}Params {
 }
 {{/hasUseCase}}
 
+{{^isMultiResponse}}
 @injectable
 class {{methodNamePascalCase}}UseCase extends UseCase<{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}, {{#hasUseCase}} {{methodNamePascalCase}}Params {{/hasUseCase}} {{^hasUseCase}} NoParams {{/hasUseCase}}> {
     final {{name}}Repository {{nameCamelCase}}Repository;
@@ -115,3 +123,17 @@ class {{methodNamePascalCase}}UseCase extends UseCase<{{#isList}}List<{{/isList}
         return {{nameCamelCase}}Repository.{{methodName}}({{#hasUseCase}} params {{/hasUseCase}});
     }
 }
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+@injectable
+class {{methodNamePascalCase}}UseCase extends UseCase<{{#hasResponse}}{{#responseIsList}}List<{{/responseIsList}}{{responseEntityName}}Entity{{#responseIsList}}>{{/responseIsList}}{{/hasResponse}}{{^hasResponse}}void{{/hasResponse}}, {{#hasUseCase}} {{methodNamePascalCase}}Params {{/hasUseCase}} {{^hasUseCase}} NoParams {{/hasUseCase}}> {
+    final {{name}}Repository {{nameCamelCase}}Repository;
+
+    {{methodNamePascalCase}}UseCase(this.{{nameCamelCase}}Repository);
+
+    @override
+    Future<{{#hasResponse}}{{#responseIsList}}List<{{/responseIsList}}{{responseEntityName}}Entity{{#responseIsList}}>{{/responseIsList}}{{/hasResponse}}{{^hasResponse}}void{{/hasResponse}}> call({{#hasUseCase}} {{methodNamePascalCase}}Params {{/hasUseCase}} {{^hasUseCase}} NoParams {{/hasUseCase}} params) async {
+        return {{nameCamelCase}}Repository.{{methodName}}({{#hasUseCase}} params {{/hasUseCase}});
+    }
+}
+{{/isMultiResponse}}

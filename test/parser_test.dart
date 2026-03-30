@@ -107,4 +107,76 @@ void main() {
       expect(update.query, isNotEmpty);
     });
   });
+
+  group('Parser.buildContext (multi-response)', () {
+    late Directory tempDir;
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('feature_gen_multi_test_');
+      writePubspec(tempDir, name: 'sample_app');
+      Directory.current = tempDir.path;
+    });
+    tearDown(() {
+      tempDir.deleteSync(recursive: true);
+    });
+
+    test('sets isMultiResponse=true and builds entity list', () async {
+      final parser = Parser(commandHelper: TestCommandHelper());
+      final schema = Schema.fromJson(multiResponseSchema());
+      final context = await parser.buildContext('auth', schema);
+
+      expect(context.isMultiResponse, isTrue);
+      expect(context.entities.map((e) => e.name), containsAll(['User', 'Token']));
+    });
+
+    test('resolves responseEntityName per method', () async {
+      final parser = Parser(commandHelper: TestCommandHelper());
+      final schema = Schema.fromJson(multiResponseSchema());
+      final context = await parser.buildContext('auth', schema);
+
+      final getUser = context.methods.firstWhere((m) => m.methodName == 'getUser');
+      expect(getUser.responseEntityName, 'User');
+      expect(getUser.hasResponse, isTrue);
+      expect(getUser.responseIsList, isFalse);
+
+      final postSomeData = context.methods.firstWhere((m) => m.methodName == 'postSomeData');
+      expect(postSomeData.responseEntityName, 'Token');
+      expect(postSomeData.hasResponse, isTrue);
+
+      final updateUser = context.methods.firstWhere((m) => m.methodName == 'updateUser');
+      expect(updateUser.responseEntityName, 'User');
+    });
+
+    test('marks void methods (no response key) as hasResponse=false', () async {
+      final parser = Parser(commandHelper: TestCommandHelper());
+      final schema = Schema.fromJson(multiResponseSchema());
+      final context = await parser.buildContext('auth', schema);
+
+      final deleteUser = context.methods.firstWhere((m) => m.methodName == 'deleteUser');
+      expect(deleteUser.hasResponse, isFalse);
+      expect(deleteUser.responseEntityName, isNull);
+    });
+
+    test('builds entity fields correctly', () async {
+      final parser = Parser(commandHelper: TestCommandHelper());
+      final schema = Schema.fromJson(multiResponseSchema());
+      final context = await parser.buildContext('auth', schema);
+
+      final userEntity = context.entities.firstWhere((e) => e.name == 'User');
+      final rootField = userEntity.fields.firstWhere((f) => f.isRoot);
+      expect(rootField.name, 'User');
+      expect(rootField.properties.map((p) => p.name), containsAll(['id', 'name', 'email']));
+    });
+
+    test('single-response schema remains unaffected (backward compat)', () async {
+      final parser = Parser(commandHelper: TestCommandHelper());
+      final schema = Schema.fromJson(blocSchema());
+      final context = await parser.buildContext('user', schema);
+
+      expect(context.isMultiResponse, isFalse);
+      expect(context.entities, isEmpty);
+      // All methods have hasResponse=false in single-response mode.
+      expect(context.methods.every((m) => !m.hasResponse), isTrue);
+    });
+  });
 }
+

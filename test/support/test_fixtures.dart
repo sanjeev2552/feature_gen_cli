@@ -62,6 +62,41 @@ Map<String, dynamic> listResponseSchema() {
   };
 }
 
+Map<String, dynamic> multiResponseSchema() {
+  return {
+    'config': {'bloc': true, 'riverpod': false},
+    'api': {
+      'methods': <String, dynamic>{
+        'getUser': {'response': 'user'},
+        'postSomeData': {
+          'body': {'name': 'string', 'email': 'string'},
+          'response': 'token',
+        },
+        'updateUser': {
+          'body': {'name': 'string'},
+          'response': 'user',
+        },
+        'deleteUser': {
+          'params': {'id': 'int'},
+        },
+      },
+    },
+    'response': {
+      'user': {
+        'id': 123,
+        'name': 'string',
+        'email': 'string',
+        'address': {'street': 'string', 'city': 'string'},
+      },
+      'token': {
+        'accessToken': 'string',
+        'refreshToken': 'string',
+        'tokenType': 'string',
+      },
+    },
+  };
+}
+
 File writeSchemaFile(Directory dir, Map<String, dynamic> schema, {String name = 'schema.json'}) {
   final file = File('${dir.path}/$name');
   file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(schema));

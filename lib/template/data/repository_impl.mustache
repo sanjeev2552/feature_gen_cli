@@ -1,6 +1,14 @@
+{{^isMultiResponse}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/data/models/{{nameLowerCase}}_model.dart';
-import 'package:{{projectName}}/features/{{nameLowerCase}}/data/datasources/{{nameLowerCase}}_remote_datasource.dart';
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+{{#responseEntities}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/data/models/{{nameLower}}_model.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLower}}_entity.dart';
+{{/responseEntities}}
+{{/isMultiResponse}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/data/datasources/{{nameLowerCase}}_remote_datasource.dart';
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/repositories/{{nameLowerCase}}_repository.dart';
 {{#methods}}
 {{#hasUseCase}}
@@ -17,9 +25,20 @@ class {{name}}RepositoryImpl implements {{name}}Repository {
 
     {{#methods}}
         @override
+        {{^isMultiResponse}}
         Future<{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}}) async {
             final model = await {{nameCamelCase}}RemoteDatasource.{{methodName}}({{#hasUseCase}} params {{/hasUseCase}});
             return {{#isList}}model.map((e) => e.toEntity()).toList(){{/isList}}{{^isList}}model.toEntity(){{/isList}};
         }
+        {{/isMultiResponse}}
+        {{#isMultiResponse}}
+        {{#hasResponse}}Future<{{#responseIsList}}List<{{/responseIsList}}{{responseEntityName}}Entity{{#responseIsList}}>{{/responseIsList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}}) async {
+            final model = await {{nameCamelCase}}RemoteDatasource.{{methodName}}({{#hasUseCase}} params {{/hasUseCase}});
+            return {{#responseIsList}}model.map((e) => e.toEntity()).toList(){{/responseIsList}}{{^responseIsList}}model.toEntity(){{/responseIsList}};
+        }{{/hasResponse}}
+        {{^hasResponse}}Future<void> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}}) async {
+            await {{nameCamelCase}}RemoteDatasource.{{methodName}}({{#hasUseCase}} params {{/hasUseCase}});
+        }{{/hasResponse}}
+        {{/isMultiResponse}}
     {{/methods}}
 }

@@ -32,8 +32,14 @@ class Parser {
   /// Builds a [Context] from a [featureName] and parsed [schema].
   ///
   /// Returns an empty context if validation fails. The caller is expected to
-  /// halt or surface the error to the user. Response fields are collected into
-  /// a nested tree with a root node matching the feature name.
+  /// halt or surface the error to the user.
+  ///
+  /// **Single-response mode**: response fields are collected into a nested tree
+  /// with a root node matching the feature name (original behaviour).
+  ///
+  /// **Multi-response mode**: one [EntityContext] is built per entry in
+  /// `schema.responses`. Each [ContextMethod] is linked to its named entity
+  /// via the `response` key on [ApiMethod].
   Future<Context> buildContext(String featureName, Schema schema) async {
     final projectRoot = Directory.current.path;
     final projectName = await YamlHelper().getProjectName(workingDirectory: projectRoot);
@@ -57,16 +63,27 @@ class Parser {
     final feature = featureName.toPascalCase();
     bool generateUseCase = false;
 
-    final methods = <ContextMethod>[];
-    // Build method-level context for usecase/event/bloc generation.
     final apiMethods = schema.api?.methods?.method ?? {};
+
+    if (schema.isMultiResponse) {
+      return _buildMultiResponseContext(
+        featureName: featureName,
+        feature: feature,
+        schema: schema,
+        apiMethods: apiMethods,
+        projectRoot: projectRoot,
+        projectName: projectName,
+        generateUseCase: generateUseCase,
+      );
+    }
+
+    // ── Single-response mode (original behaviour) ──────────────────────────
+
+    final methods = <ContextMethod>[];
     for (var method in apiMethods.entries) {
       final contextMethod = buildContextMethod(method);
-
       methods.add(contextMethod);
-      if (contextMethod.hasUseCase) {
-        generateUseCase = true;
-      }
+      if (contextMethod.hasUseCase) generateUseCase = true;
     }
 
     // Response fields become entity/model properties.
@@ -86,15 +103,88 @@ class Parser {
       projectRoot: projectRoot,
       projectName: projectName,
       config: schema.config ?? Config(),
+      isMultiResponse: false,
+      entities: [],
     );
   }
+
+  // ── Multi-response private helper ─────────────────────────────────────────
+
+  Future<Context> _buildMultiResponseContext({
+    required String featureName,
+    required String feature,
+    required Schema schema,
+    required Map<String, ApiMethod> apiMethods,
+    required String projectRoot,
+    required String projectName,
+    required bool generateUseCase,
+  }) async {
+    final responses = schema.responses!;
+    final validKeys = responses.keys.toSet();
+
+    // Build one EntityContext per named response.
+    final entities = <EntityContext>[];
+    for (final entry in responses.entries) {
+      final (fieldMap, entIsList) = entry.value;
+      final entityPascal = entry.key.toPascalCase();
+      final contextFields = <NestedContextField>[];
+      final props = buildContextFields(fieldMap, contextFields);
+      contextFields.add(NestedContextField(name: entityPascal, properties: props, isRoot: true));
+
+      entities.add(
+        EntityContext(
+          name: entityPascal,
+          nameLower: entry.key.toLowerCase(),
+          nameCamelCase: entry.key.toCamelCase(),
+          isList: entIsList,
+          fields: contextFields,
+        ),
+      );
+    }
+
+    // Build per-method context, resolving response entity refs.
+    final methods = <ContextMethod>[];
+    for (final method in apiMethods.entries) {
+      final contextMethod = buildContextMethod(method, validResponseKeys: validKeys);
+      methods.add(contextMethod);
+      if (contextMethod.hasUseCase) generateUseCase = true;
+    }
+
+    // Use the first entity as the "primary" for legacy template vars that
+    // expect a single entity name/fields (they won't be used in multi-response
+    // templates, but Context requires non-null values).
+    final primary = entities.firstOrNull;
+
+    return Context(
+      name: feature,
+      nameLowerCase: featureName.toLowerCase(),
+      nameCamelCase: featureName.toCamelCase(),
+      isList: primary?.isList ?? false,
+      fields: primary?.fields ?? [],
+      methods: methods,
+      generateUseCase: generateUseCase,
+      projectRoot: projectRoot,
+      projectName: projectName,
+      config: schema.config ?? Config(),
+      isMultiResponse: true,
+      entities: entities,
+    );
+  }
+
+  // ── Method builder ────────────────────────────────────────────────────────
 
   /// Converts an [ApiMethod] schema entry into a [ContextMethod].
   ///
   /// Params/body/query sections are expanded into nested field trees that can
   /// generate request models. The `hasUseCase` flag is derived from the
   /// presence of any params/body/query.
-  ContextMethod buildContextMethod(MapEntry<String, ApiMethod> method) {
+  ///
+  /// [validResponseKeys] is supplied in multi-response mode so the method's
+  /// `response` key can be validated and resolved to entity name strings.
+  ContextMethod buildContextMethod(
+    MapEntry<String, ApiMethod> method, {
+    Set<String>? validResponseKeys,
+  }) {
     final paramsFields = <NestedContextField>[],
         bodyFields = <NestedContextField>[],
         queryFields = <NestedContextField>[];
@@ -131,6 +221,28 @@ class Parser {
       );
     }
 
+    // Resolve response entity reference (multi-response mode only).
+    String? responseEntityName;
+    String? responseEntityNameLower;
+    String? responseEntityCamelCase;
+    bool responseIsList = method.value.responseIsList;
+    bool hasResponse = false;
+
+    final rawResponse = method.value.response;
+    if (rawResponse != null && validResponseKeys != null) {
+      if (validResponseKeys.contains(rawResponse)) {
+        responseEntityName = rawResponse.toPascalCase();
+        responseEntityNameLower = rawResponse.toLowerCase();
+        responseEntityCamelCase = rawResponse.toCamelCase();
+        hasResponse = true;
+      } else {
+        _commandHelper.warning(
+          'Method "${method.key}" declares response "$rawResponse" which is not defined in the '
+          '"response" section. It will be treated as void.',
+        );
+      }
+    }
+
     return ContextMethod(
       methodName: method.key,
       methodNamePascalCase: method.key.camelCaseToPascalCase(),
@@ -141,8 +253,15 @@ class Parser {
       hasBody: bodyFields.isNotEmpty,
       hasQuery: queryFields.isNotEmpty,
       hasUseCase: paramsFields.isNotEmpty || bodyFields.isNotEmpty || queryFields.isNotEmpty,
+      responseEntityName: responseEntityName,
+      responseEntityNameLower: responseEntityNameLower,
+      responseEntityCamelCase: responseEntityCamelCase,
+      responseIsList: responseIsList,
+      hasResponse: hasResponse,
     );
   }
+
+  // ── Field builder ─────────────────────────────────────────────────────────
 
   /// Converts a `{ fieldName: schemaType }` map to a list of [ContextField]s.
   ///
@@ -192,13 +311,15 @@ class Parser {
     }).toList();
   }
 
+  // ── Validation ────────────────────────────────────────────────────────────
+
   /// Validates that [schema] has the required sections and config.
   ///
   /// Requires `api`, `api.methods`, `response`, and `config`, with exactly one
   /// of `config.bloc` or `config.riverpod` set to true.
   ///
-  /// Validation errors are reported via [CommandHelper] to ensure consistent
-  /// CLI output.
+  /// In multi-response mode, additionally checks that any method `response` key
+  /// that is set corresponds to a declared response entity.
   bool validateSchema(Schema schema) {
     if (schema.api == null) {
       _commandHelper.error('Schema is not valid. "api" is required.');
@@ -208,7 +329,7 @@ class Parser {
       _commandHelper.error('Schema is not valid. "api.methods" is required.');
       return false;
     }
-    if (schema.response == null) {
+    if (schema.response == null && schema.responses == null) {
       _commandHelper.error('Schema is not valid. "response" is required.');
       return false;
     }
@@ -220,8 +341,25 @@ class Parser {
       _commandHelper.error('Schema is not valid. "config.bloc" or "config.riverpod" is required.');
       return false;
     }
+
+    // In multi-response mode: warn if a method's response key is unknown.
+    if (schema.isMultiResponse) {
+      final validKeys = schema.responses!.keys.toSet();
+      for (final method in schema.api!.methods!.method!.entries) {
+        final resp = method.value.response;
+        if (resp != null && !validKeys.contains(resp)) {
+          _commandHelper.warning(
+            'Method "${method.key}" declares response "$resp" which is not a key in the '
+            '"response" section. Valid keys: ${validKeys.join(', ')}.',
+          );
+        }
+      }
+    }
+
     return true;
   }
+
+  // ── Type resolution ───────────────────────────────────────────────────────
 
   /// Maps a schema type (e.g. `"string"`, `"int"`) to its Dart type string.
   ///

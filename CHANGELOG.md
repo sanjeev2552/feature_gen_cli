@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.4.0
+
+### Features
+
+- **Multi-Response Support** — The `response` section now accepts multiple named entity types in addition to the existing single-response format. Any response map whose top-level values are all objects is automatically detected as multi-response mode:
+
+  ```json
+  "response": {
+    "user":  { "id": 123, "name": "string", "email": "string" },
+    "token": { "accessToken": "string", "refreshToken": "string" }
+  }
+  ```
+
+- **Per-Method Response Binding** — Each API method can now declare which response entity it returns via the `"response"` key. Array-wrapped values (`["user"]`) mark the return type as `List<UserEntity>`:
+
+  ```json
+  "getUser":      { "response": "user" },
+  "postSomeData": { "body": { ... }, "response": "token" },
+  "listUsers":    { "response": ["user"] },
+  "deleteUser":   { "params": { "id": "int" } }
+  ```
+
+- **Void-Return Methods** — Methods without a `response` key in multi-response mode generate `Future<void>` signatures across all layers (repository, datasource, usecase, bloc, riverpod).
+
+- **Per-Entity File Generation** — In multi-response mode the generator creates one entity file and one model file per named response (e.g. `user_entity.dart` + `token_entity.dart`) instead of a single combined file.
+
+- **Per-Method Typed Bloc States** — The BLoC `State` class gains one typed success factory per method instead of a single generic success state, e.g.:
+  ```dart
+  const factory UserState.getUserSuccess(UserEntity data) = ...;
+  const factory UserState.postSomeDataSuccess(TokenEntity data) = ...;
+  const factory UserState.deleteUserSuccess() = ...;
+  ```
+
+### Backward Compatibility
+
+- Single-response schemas (including array-wrapped `[{...}]`) are **fully unchanged** — all existing generated code is identical to previous versions.
+
+### Tests
+
+- **Multi-Response Detection Tests** — New tests covering `Schema.fromJson` detection logic, `ApiMethod` response field parsing (string and array-wrapped), and backward-compat of single-response schemas.
+- **Multi-Response Parser Tests** — New tests verifying `buildContext` correctly builds `EntityContext` list, resolves `responseEntityName` per method, and marks void methods as `hasResponse=false`.
+
 ## 1.3.5
 
 ### Tests

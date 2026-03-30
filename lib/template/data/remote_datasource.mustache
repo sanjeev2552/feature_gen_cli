@@ -1,4 +1,11 @@
+{{^isMultiResponse}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/data/models/{{nameLowerCase}}_model.dart';
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+{{#responseEntities}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/data/models/{{nameLower}}_model.dart';
+{{/responseEntities}}
+{{/isMultiResponse}}
 {{#methods}}
 {{#hasUseCase}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
@@ -9,8 +16,18 @@ import 'package:injectable/injectable.dart';
 @lazySingleton
 class {{name}}RemoteDatasource {
     {{#methods}}
+        {{^isMultiResponse}}
         Future<{{#isList}}List<{{/isList}}{{name}}Model{{#isList}}>{{/isList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}}) async {
             throw UnimplementedError();
         }
+        {{/isMultiResponse}}
+        {{#isMultiResponse}}
+        {{#hasResponse}}Future<{{#responseIsList}}List<{{/responseIsList}}{{responseEntityName}}Model{{#responseIsList}}>{{/responseIsList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}}) async {
+            throw UnimplementedError();
+        }{{/hasResponse}}
+        {{^hasResponse}}Future<void> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}}) async {
+            throw UnimplementedError();
+        }{{/hasResponse}}
+        {{/isMultiResponse}}
     {{/methods}}
 }

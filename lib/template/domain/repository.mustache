@@ -1,4 +1,11 @@
+{{^isMultiResponse}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+{{#responseEntities}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLower}}_entity.dart';
+{{/responseEntities}}
+{{/isMultiResponse}}
 {{#methods}}
 {{#hasUseCase}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
@@ -7,6 +14,8 @@ import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{met
 
 abstract class {{name}}Repository {
     {{#methods}}
-        Future<{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}});
+        {{^isMultiResponse}}Future<{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}});{{/isMultiResponse}}
+        {{#isMultiResponse}}{{#hasResponse}}Future<{{#responseIsList}}List<{{/responseIsList}}{{responseEntityName}}Entity{{#responseIsList}}>{{/responseIsList}}> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}});{{/hasResponse}}{{/isMultiResponse}}
+        {{#isMultiResponse}}{{^hasResponse}}Future<void> {{methodName}}({{#hasUseCase}} {{methodNamePascalCase}}Params params {{/hasUseCase}});{{/hasResponse}}{{/isMultiResponse}}
     {{/methods}}
 }

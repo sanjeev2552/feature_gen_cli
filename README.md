@@ -34,30 +34,85 @@ feature_gen_cli --help                             # show help
 
 The schema is a single JSON file requiring three sections: `config`, `api.methods`, and `response`.
 
+### Single-Response (one entity for the whole feature)
+
 ```json
 {
   "config": { "bloc": true, "riverpod": false },
-  "api": { 
-    "methods": { 
-      "getUser": {},
+  "api": {
+    "methods": {
+      "getUser":    {},
       "updateUser": { "body": { "name": "string", "email": "string" } },
       "deleteUser": { "params": { "id": "int" } }
-    } 
+    }
   },
   "response": { "id": "int", "name": "string" }
 }
 ```
 
+### Multi-Response (different entities per method)
+
+When different API methods return different types, define each response type by name and add a `"response"` key to each method that declares which type it returns.
+
+```json
+{
+  "config": { "bloc": true, "riverpod": false },
+  "api": {
+    "methods": {
+      "getUser":      { "response": "user" },
+      "postSomeData": { "body": { "name": "string", "email": "string" }, "response": "token" },
+      "updateUser":   { "body": { "name": "string" }, "response": "user" },
+      "deleteUser":   { "params": { "id": "int" } }
+    }
+  },
+  "response": {
+    "user":  { "id": 123, "name": "string", "email": "string" },
+    "token": { "accessToken": "string", "refreshToken": "string", "tokenType": "string" }
+  }
+}
+```
+
+**Multi-response rules:**
+
+- **Detection** — if all top-level values in `response` are objects, multi-response mode is activated automatically. No extra flag needed.
+- **Per-method binding** — set `"response": "<key>"` on any method to link it to a named entity.
+- **List returns** — wrap the key in an array to return a list: `"response": ["user"]` → `Future<List<UserEntity>>`.
+- **Void methods** — omit `"response"` entirely and the method generates `Future<void>` across all layers.
+- **Backward compatible** — schemas with primitive values at the top level of `response` continue to work as single-response.
+
+### Common Options
+
 - **`config`**: Both keys (`bloc` and `riverpod`) are required; exactly one must be `true`.
 - **`api.methods`**: Define endpoints (camelCase). Optionally include `params`, `body`, or `query` to generate `UseCase` and param classes.
-- **`response`**: Define base entity/model fields. Wrap in an array for lists (e.g., `[ { "id": "int" } ]`). Supports primitives (`"string"`, `"int"`, `"double"`, `"bool"`, `"list"`, `"map"`) and nested objects.
+- **`response`**: Define entity fields. Supported primitives: `"string"`, `"int"`, `"double"`, `"bool"`, `"list"`, `"map"`. Supports nested objects and arrays.
 
 ## Generated Structure
 
-Running the CLI produces a complete clean-architecture module in `lib/features/<feature_name>/` containing:
-- **data/**: Datasources, models, and repository implementations.
-- **domain/**: Entities, repository interfaces, and usecases.
-- **presentation/**: BLoC/Notifier and screens.
+Running the CLI produces a complete clean-architecture module in `lib/features/<feature_name>/`:
+
+```
+lib/features/<feature>/
+├── data/
+│   ├── datasources/   <feature>_remote_datasource.dart
+│   ├── models/        <entity>_model.dart          (one per entity in multi-response)
+│   └── repositories/  <feature>_repository_impl.dart
+└── domain/
+    ├── entities/      <entity>_entity.dart          (one per entity in multi-response)
+    ├── repositories/  <feature>_repository.dart
+    └── usecases/      <method>_usecase.dart
+└── presentation/
+    ├── bloc/          <feature>_bloc.dart, _event.dart, _state.dart
+    └── screen/        <feature>_screen.dart
+```
+
+In **multi-response mode**, the BLoC state gets one typed success factory per method:
+
+```dart
+// generated user_state.dart
+const factory UserState.getUserSuccess(UserEntity data) = _GetUserSuccessState;
+const factory UserState.postSomeDataSuccess(TokenEntity data) = _PostSomeDataSuccessState;
+const factory UserState.deleteUserSuccess() = _DeleteUserSuccessState;
+```
 
 The CLI automatically adds missing dependencies, runs `build_runner`, and formats the generated code.
 

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "bloc": true,
+    "riverpod": false
+  },
+  "api": {
+    "methods": {
+      "getUser": {
+        "response": "user"
+      },
+      "postSomeData": {
+        "body": {
+          "name": "string",
+          "email": "string",
+          "password": "string"
+        },
+        "response": ["token"]
+      },
+      "updateUser": {
+        "body": {
+          "name": "string",
+          "email": "string"
+        },
+        "response": "user"
+      },
+      "deleteUser": {
+        "params": {
+          "id": "int"
+        }
+      }
+    }
+  },
+  "response": {
+    "user": {
+      "id": 123,
+      "name": "string",
+      "email": "string",
+      "address": {
+        "street": "string",
+        "city": "string"
+      }
+    },
+    "token": {
+      "accessToken": "string",
+      "refreshToken": "string",
+      "tokenType": "string"
+    }
+  }
+}

@@ -18,6 +18,59 @@ void main() {
     });
   });
 
+  group('Schema multi-response detection', () {
+    test('detects multi-response when all values are objects', () {
+      final schema = Schema.fromJson({
+        'config': {'bloc': true, 'riverpod': false},
+        'api': {'methods': {}},
+        'response': {
+          'user': {'id': 'int', 'name': 'string'},
+          'token': {'accessToken': 'string'},
+        },
+      });
+      expect(schema.isMultiResponse, isTrue);
+      expect(schema.responses!.keys, containsAll(['user', 'token']));
+      expect(schema.response, isNull);
+    });
+
+    test('treats mixed-value response map as single-response', () {
+      final schema = Schema.fromJson({
+        'config': {'bloc': true, 'riverpod': false},
+        'api': {'methods': {}},
+        'response': {'id': 123, 'name': 'string'},
+      });
+      expect(schema.isMultiResponse, isFalse);
+      expect(schema.response, isNotNull);
+    });
+
+    test('treats list-wrapped response as single-response with isList=true', () {
+      final schema = Schema.fromJson({
+        'config': {'bloc': true, 'riverpod': false},
+        'api': {'methods': {}},
+        'response': [
+          {'id': 'int'}
+        ],
+      });
+      expect(schema.isMultiResponse, isFalse);
+      expect(schema.isList, isTrue);
+    });
+
+    test('ApiMethod parses response key as string', () {
+      final method = ApiMethod.fromJson({'response': 'user'});
+      expect(method.response, 'user');
+      expect(method.responseIsList, isFalse);
+    });
+
+    test('ApiMethod parses array-wrapped response key', () {
+      final method = ApiMethod.fromJson({
+        'response': ['user']
+      });
+      expect(method.response, 'user');
+      expect(method.responseIsList, isTrue);
+    });
+  });
+
+
   group('Config validation', () {
     test('throws when both bloc and riverpod are true', () {
       expect(() => Config(bloc: true, riverpod: true), throwsArgumentError);

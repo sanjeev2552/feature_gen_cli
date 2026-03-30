@@ -5,27 +5,84 @@
 /// code generation.
 class Schema {
   final Api? api;
+
+  /// Single-response mode: the flat field map (or null in multi-response mode).
   final Map<String, dynamic>? response;
+
+  /// Multi-response mode: map of entity-key → (field map, isList flag).
+  ///
+  /// Populated when the `response` JSON value has all-object top-level values,
+  /// e.g. `{ "user": { ... }, "token": { ... } }`.
+  final Map<String, (Map<String, dynamic>, bool)>? responses;
+
   final Config? config;
 
-  /// Whether the response is an array at the root level.
+  /// Whether the response is an array at the root level (single-response mode).
   final bool isList;
 
-  Schema({this.api, this.response, this.config, this.isList = false});
+  /// True when the `response` key uses the multi-response format.
+  final bool isMultiResponse;
+
+  Schema({
+    this.api,
+    this.response,
+    this.responses,
+    this.config,
+    this.isList = false,
+    this.isMultiResponse = false,
+  });
 
   factory Schema.fromJson(Map<String, dynamic> json) {
-    final (response, isList) = responseParser(json['response']);
+    final rawResponse = json['response'];
+    bool isMultiResponse = false;
+    Map<String, dynamic>? singleResponse;
+    bool isList = false;
+    Map<String, (Map<String, dynamic>, bool)>? multiResponses;
+
+    if (rawResponse is List) {
+      // Existing array-wrapped single response.
+      singleResponse = rawResponse.isEmpty
+          ? {}
+          : Map<String, dynamic>.from(rawResponse.first as Map);
+      isList = true;
+    } else if (rawResponse is Map) {
+      final responseMap = Map<String, dynamic>.from(rawResponse);
+      // Detect multi-response: ALL top-level values must be Maps (or Lists of Maps).
+      final allObjects = responseMap.values.every(
+        (v) =>
+            v is Map ||
+            (v is List && v.isNotEmpty && v.first is Map),
+      );
+
+      if (allObjects && responseMap.isNotEmpty) {
+        isMultiResponse = true;
+        multiResponses = responseMap.map((key, value) {
+          if (value is List) {
+            return MapEntry(key, (Map<String, dynamic>.from(value.first as Map), true));
+          }
+          return MapEntry(key, (Map<String, dynamic>.from(value as Map), false));
+        });
+      } else {
+        // Mixed / primitive values → existing single-response.
+        singleResponse = responseMap;
+      }
+    }
+
     return Schema(
-      api: json['api'] == null ? null : Api.fromJson(json['api'] as Map<String, dynamic>),
-      response: response,
+      api: json['api'] == null
+          ? null
+          : Api.fromJson(Map<String, dynamic>.from(json['api'] as Map)),
+      response: singleResponse,
+      responses: multiResponses,
       config: json['config'] == null
           ? null
-          : Config.fromJson(json['config'] as Map<String, dynamic>),
+          : Config.fromJson(Map<String, dynamic>.from(json['config'] as Map)),
       isList: isList,
+      isMultiResponse: isMultiResponse,
     );
   }
 
-  /// Unwraps array responses, returning the inner element map and a flag.
+  /// Unwraps array responses for single-response mode, returning inner element map and flag.
   static (Map<String, dynamic>, bool) responseParser(dynamic response) {
     if (response is List) {
       return (response.first, true);
@@ -74,7 +131,7 @@ class Api {
     return Api(
       methods: json['methods'] == null
           ? null
-          : Methods.fromJson(json['methods'] as Map<String, dynamic>),
+          : Methods.fromJson(Map<String, dynamic>.from(json['methods'] as Map)),
     );
   }
 
@@ -92,7 +149,11 @@ class Methods {
   Methods({this.method});
 
   factory Methods.fromJson(Map<String, dynamic> json) {
-    return Methods(method: json.map((key, value) => MapEntry(key, ApiMethod.fromJson(value))));
+    return Methods(
+      method: json.map(
+        (key, value) => MapEntry(key, ApiMethod.fromJson(Map<String, dynamic>.from(value as Map))),
+      ),
+    );
   }
 
   Map<String, dynamic> toMap() {
@@ -100,7 +161,7 @@ class Methods {
   }
 }
 
-/// A single API method's input contract (params, body, query).
+/// A single API method's input contract (params, body, query) plus optional response ref.
 ///
 /// All fields are optional to allow lightweight endpoints and read-only calls.
 class ApiMethod {
@@ -108,18 +169,48 @@ class ApiMethod {
   final Map<String, dynamic>? body;
   final Map<String, dynamic>? query;
 
-  ApiMethod({this.params, this.body, this.query});
+  /// The response entity key (e.g. `"user"`, `"token"`).
+  ///
+  /// In multi-response mode this links the method to a named entry in
+  /// `Schema.responses`. In single-response mode this field is ignored.
+  /// An array-wrapped value (e.g. `["user"]`) sets [responseIsList] to true.
+  final String? response;
+
+  /// True when the `response` key was written as a single-element array,
+  /// meaning the method returns a list of the referenced entity.
+  final bool responseIsList;
+
+  ApiMethod({this.params, this.body, this.query, this.response, this.responseIsList = false});
 
   factory ApiMethod.fromJson(Map<String, dynamic> json) {
+    String? response;
+    bool responseIsList = false;
+
+    final rawResponse = json['response'];
+    if (rawResponse is List && rawResponse.isNotEmpty) {
+      response = rawResponse.first as String;
+      responseIsList = true;
+    } else if (rawResponse is String) {
+      response = rawResponse;
+    }
+
     return ApiMethod(
       params: json['params'] as Map<String, dynamic>?,
       body: json['body'] as Map<String, dynamic>?,
       query: json['query'] as Map<String, dynamic>?,
+      response: response,
+      responseIsList: responseIsList,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {'params': params, 'body': body, 'query': query};
+    return {
+      'params': params,
+      'body': body,
+      'query': query,
+      'response': response,
+      'responseIsList': responseIsList,
+    };
   }
 }
 
@@ -138,6 +229,22 @@ class ContextMethod {
   final bool hasBody;
   final bool hasQuery;
 
+  /// PascalCase entity name this method returns, e.g. `"User"` or `"Token"`.
+  /// Null in single-response mode or when the method returns void.
+  final String? responseEntityName;
+
+  /// lowercase entity name, e.g. `"user"`. Used for import paths.
+  final String? responseEntityNameLower;
+
+  /// camelCase entity name, e.g. `"user"`. Used for variable names.
+  final String? responseEntityCamelCase;
+
+  /// Whether the method returns a list of the entity.
+  final bool responseIsList;
+
+  /// False for void-return methods (no `response` key in multi-response mode).
+  final bool hasResponse;
+
   ContextMethod({
     required this.methodName,
     required this.methodNamePascalCase,
@@ -148,6 +255,11 @@ class ContextMethod {
     required this.hasBody,
     required this.hasQuery,
     required this.hasUseCase,
+    this.responseEntityName,
+    this.responseEntityNameLower,
+    this.responseEntityCamelCase,
+    this.responseIsList = false,
+    this.hasResponse = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -161,6 +273,11 @@ class ContextMethod {
       'hasBody': hasBody,
       'hasQuery': hasQuery,
       'hasUseCase': hasUseCase,
+      'responseEntityName': responseEntityName,
+      'responseEntityNameLower': responseEntityNameLower,
+      'responseEntityCamelCase': responseEntityCamelCase,
+      'responseIsList': responseIsList,
+      'hasResponse': hasResponse,
     };
   }
 
@@ -223,6 +340,48 @@ class ContextField {
   }
 }
 
+/// Template-ready representation of a single named response entity.
+///
+/// Used in multi-response mode to drive per-entity file generation
+/// and to build deduplicated import lists in templates.
+class EntityContext {
+  /// PascalCase name, e.g. `"User"`.
+  final String name;
+
+  /// lowercase name, e.g. `"user"`.
+  final String nameLower;
+
+  /// camelCase name, e.g. `"user"`.
+  final String nameCamelCase;
+
+  /// True when the response was array-wrapped (`["user"]`).
+  final bool isList;
+
+  /// Flat + nested fields for this entity (same shape as [Context.fields]).
+  final List<NestedContextField> fields;
+
+  EntityContext({
+    required this.name,
+    required this.nameLower,
+    required this.nameCamelCase,
+    required this.isList,
+    required this.fields,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'nameLower': nameLower,
+      'nameCamelCase': nameCamelCase,
+      'isList': isList,
+      'fields': fields.map((f) => f.toMap()).toList(),
+    };
+  }
+
+  @override
+  String toString() => toMap().toString();
+}
+
 /// Root context passed to the Mustache template engine for code generation.
 ///
 /// This is the single source of truth for all template rendering, including
@@ -239,6 +398,12 @@ class Context {
   final String projectName;
   final Config config;
 
+  /// True when the schema uses the multi-response format.
+  final bool isMultiResponse;
+
+  /// All named entity contexts; populated in multi-response mode.
+  final List<EntityContext> entities;
+
   Context({
     required this.name,
     required this.nameLowerCase,
@@ -250,6 +415,8 @@ class Context {
     required this.projectRoot,
     required this.projectName,
     required this.config,
+    this.isMultiResponse = false,
+    this.entities = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -264,6 +431,8 @@ class Context {
       'projectRoot': projectRoot,
       'projectName': projectName,
       'config': config.toMap(),
+      'isMultiResponse': isMultiResponse,
+      'entities': entities.map((e) => e.toMap()).toList(),
     };
   }
 
