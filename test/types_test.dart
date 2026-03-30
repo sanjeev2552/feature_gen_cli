@@ -72,12 +72,15 @@ void main() {
 
 
   group('Config validation', () {
-    test('throws when both bloc and riverpod are true', () {
-      expect(() => Config(bloc: true, riverpod: true), throwsArgumentError);
+    test('throws when more than one toggle is true', () {
+      expect(() => Config(bloc: true, riverpod: true, getx: false), throwsArgumentError);
+      expect(() => Config(bloc: true, riverpod: false, getx: true), throwsArgumentError);
+      expect(() => Config(bloc: false, riverpod: true, getx: true), throwsArgumentError);
+      expect(() => Config(bloc: true, riverpod: true, getx: true), throwsArgumentError);
     });
 
-    test('throws when both bloc and riverpod are false', () {
-      expect(() => Config(bloc: false, riverpod: false), throwsArgumentError);
+    test('throws when all toggles are false', () {
+      expect(() => Config(bloc: false, riverpod: false, getx: false), throwsArgumentError);
     });
   });
 
@@ -114,7 +117,7 @@ void main() {
         generateUseCase: false,
         projectRoot: '/tmp',
         projectName: 'sample',
-        config: Config(bloc: true, riverpod: false),
+        config: Config(bloc: true, riverpod: false, getx: false),
       );
       final map = context.toMap();
       expect(map['name'], 'User');

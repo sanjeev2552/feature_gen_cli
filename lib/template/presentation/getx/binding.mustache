@@ -1,0 +1,10 @@
+import 'package:get/get.dart';
+import 'package:{{projectName}}/core/di/injector.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/getx/{{nameLowerCase}}_controller.dart';
+
+class {{name}}Binding extends Bindings {
+    @override
+    void dependencies() {
+        Get.lazyPut<{{name}}Controller>(() => sl<{{name}}Controller>());
+    }
+}

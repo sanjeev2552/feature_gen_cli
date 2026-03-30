@@ -35,7 +35,22 @@ Map<String, dynamic> blocSchema() {
 
 Map<String, dynamic> riverpodSchema() {
   return {
-    'config': {'bloc': false, 'riverpod': true},
+    'config': {'bloc': false, 'riverpod': true, 'getx': false},
+    'api': {
+      'methods': <String, dynamic>{
+        'getUser': <String, dynamic>{},
+      },
+    },
+    'response': {
+      'id': 'int',
+      'name': 'string',
+    },
+  };
+}
+
+Map<String, dynamic> getxSchema() {
+  return {
+    'config': {'bloc': false, 'riverpod': false, 'getx': true},
     'api': {
       'methods': <String, dynamic>{
         'getUser': <String, dynamic>{},

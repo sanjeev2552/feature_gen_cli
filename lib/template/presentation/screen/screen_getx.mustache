@@ -1,0 +1,25 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/getx/{{nameLowerCase}}_controller.dart';
+
+class {{name}}Screen extends GetView<{{name}}Controller> {
+    const {{name}}Screen({super.key});
+
+    @override
+    Widget build(BuildContext context) {
+        return Scaffold(
+            appBar: AppBar(title: const Text('{{name}}')),
+            body: Obx(() {
+                if (controller.isLoading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                }
+
+                if (controller.errorMessage.value != null) {
+                    return Center(child: Text(controller.errorMessage.value!));
+                }
+
+                return const Placeholder();
+            }),
+        );
+    }
+}

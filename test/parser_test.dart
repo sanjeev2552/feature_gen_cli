@@ -39,11 +39,12 @@ void main() {
       final helper = TestCommandHelper();
       final parser = Parser(commandHelper: helper);
 
-      final schema = Schema(api: Api(methods: Methods(method: {})), response: {});
+      final schema = Schema(api: Api(methods: Methods(method: {})), response: {}, config: Config(bloc: null, riverpod: null, getx: null));
       final ok = parser.validateSchema(schema);
 
       expect(ok, isFalse);
       expect(helper.errors, isNotEmpty);
+      expect(helper.errors.first, contains('config.bloc", "config.riverpod", or "config.getx" is required.'));
     });
   });
 

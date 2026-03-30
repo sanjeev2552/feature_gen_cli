@@ -50,7 +50,7 @@ void main() {
   });
 
   group('Generator.generateFeature', () {
-    Future<Context> _buildContext({
+    Future<Context> buildContext({
       required Map<String, dynamic> schemaJson,
       required Directory projectDir,
       required String featureName,
@@ -69,7 +69,7 @@ void main() {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
       addTearDown(() => tempDir.deleteSync(recursive: true));
 
-      final context = await _buildContext(
+      final context = await buildContext(
         schemaJson: blocSchema(),
         projectDir: tempDir,
         featureName: 'user',
@@ -102,7 +102,7 @@ void main() {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
       addTearDown(() => tempDir.deleteSync(recursive: true));
 
-      final context = await _buildContext(
+      final context = await buildContext(
         schemaJson: riverpodSchema(),
         projectDir: tempDir,
         featureName: 'user',
@@ -116,11 +116,31 @@ void main() {
       expect(File('$base/presentation/screen/user_screen.dart').existsSync(), isTrue);
     });
 
+    test('generates GetX files and skips BLoC and Riverpod files', () async {
+      final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+
+      final context = await buildContext(
+        schemaJson: getxSchema(),
+        projectDir: tempDir,
+        featureName: 'user',
+      );
+
+      await Generator().generateFeature(context);
+
+      final base = '${tempDir.path}/lib/features/user';
+      expect(File('$base/presentation/getx/user_controller.dart').existsSync(), isTrue);
+      expect(File('$base/presentation/getx/user_binding.dart').existsSync(), isTrue);
+      expect(File('$base/presentation/screen/user_screen.dart').existsSync(), isTrue);
+      expect(File('$base/presentation/bloc/user_bloc.dart').existsSync(), isFalse);
+      expect(File('$base/presentation/riverpod/user_notifier.dart').existsSync(), isFalse);
+    });
+
     test('uses NoParams when method has no params/body/query', () async {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
       addTearDown(() => tempDir.deleteSync(recursive: true));
 
-      final context = await _buildContext(
+      final context = await buildContext(
         schemaJson: blocSchema(),
         projectDir: tempDir,
         featureName: 'user',

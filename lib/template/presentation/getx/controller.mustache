@@ -1,0 +1,61 @@
+import 'package:get/get.dart';
+import 'package:injectable/injectable.dart';
+
+{{^isMultiResponse}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+{{#responseEntities}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLower}}_entity.dart';
+{{/responseEntities}}
+{{/isMultiResponse}}
+{{#methods}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
+{{^hasUseCase}}
+import 'package:{{projectName}}/features/shared/usecase/usecase.dart';
+{{/hasUseCase}}
+{{/methods}}
+
+@injectable
+class {{name}}Controller extends GetxController {
+    {{#methods}}
+    final {{methodNamePascalCase}}UseCase _{{methodName}}UseCase;
+    {{/methods}}
+
+    {{name}}Controller({
+        {{#methods}}
+        required {{methodNamePascalCase}}UseCase {{methodName}}UseCase,
+        {{/methods}}
+    }) : {{#methods}}_{{methodName}}UseCase = {{methodName}}UseCase,{{/methods}}
+    super();
+
+    final state = Rx<{{^isMultiResponse}}{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?{{/isMultiResponse}}{{#isMultiResponse}}dynamic{{/isMultiResponse}}>(null);
+    final isLoading = false.obs;
+    final errorMessage = Rx<String?>(null);
+
+    {{#methods}}
+    Future<void> {{methodName}}({{#hasUseCase}}{{methodNamePascalCase}}{{/hasUseCase}}{{^hasUseCase}}No{{/hasUseCase}}Params param) async {
+        try {
+            isLoading.value = true;
+            errorMessage.value = null;
+            {{^isMultiResponse}}
+            final result = await _{{methodName}}UseCase(param);
+            state.value = result;
+            {{/isMultiResponse}}
+            {{#isMultiResponse}}
+            {{#hasResponse}}
+            final result = await _{{methodName}}UseCase(param);
+            state.value = result;
+            {{/hasResponse}}
+            {{^hasResponse}}
+            await _{{methodName}}UseCase(param);
+            {{/hasResponse}}
+            {{/isMultiResponse}}
+        } catch (e) {
+            errorMessage.value = e.toString();
+        } finally {
+            isLoading.value = false;
+        }
+    }
+    {{/methods}}
+}

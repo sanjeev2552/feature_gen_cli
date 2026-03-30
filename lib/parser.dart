@@ -337,8 +337,8 @@ class Parser {
       _commandHelper.error('Schema is not valid. "config" is required.');
       return false;
     }
-    if (schema.config!.bloc == null && schema.config!.riverpod == null) {
-      _commandHelper.error('Schema is not valid. "config.bloc" or "config.riverpod" is required.');
+    if (schema.config!.bloc == null && schema.config!.riverpod == null && schema.config!.getx == null) {
+      _commandHelper.error('Schema is not valid. "config.bloc", "config.riverpod", or "config.getx" is required.');
       return false;
     }
 
