@@ -86,6 +86,8 @@ When different API methods return different types, define each response type by 
 - **`api.methods`**: Define endpoints (camelCase). Optionally include `params`, `body`, or `query` to generate `UseCase` and param classes.
 - **`response`**: Define entity fields. Supported primitives: `"string"`, `"int"`, `"double"`, `"bool"`, `"list"`, `"map"`. Supports nested objects and arrays.
 
+**Naming Convention Note:** `snake_case` keys in your configuration JSON are automatically generated into `camelCase` variables for your data classes, ensuring code idiomacy. Serialization layers accurately map variables back to their exact original JSON keys using Freezed `@JsonKey` configurations and custom overrides automatically.
+
 ## Generated Structure
 
 Running the CLI produces a complete clean-architecture module in `lib/features/<feature_name>/`:

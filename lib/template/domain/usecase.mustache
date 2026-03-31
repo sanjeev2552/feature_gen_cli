@@ -27,7 +27,7 @@ class {{name}}{{#isRoot}}PathParams{{/isRoot}} extends PathParams {
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
-            '{{name}}': {{name}},
+            '{{jsonKey}}': {{name}},
             {{/properties}}
         };
     }
@@ -52,7 +52,7 @@ class {{name}}{{#isRoot}}BodyParams{{/isRoot}} extends BodyParams {
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
-            '{{name}}': {{name}},
+            '{{jsonKey}}': {{name}},
             {{/properties}}
         };
     }
@@ -77,7 +77,7 @@ class {{name}}{{#isRoot}}QueryParams{{/isRoot}} extends QueryParams {
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
-            '{{name}}': {{name}},
+            '{{jsonKey}}': {{name}},
             {{/properties}}
         };
     }
