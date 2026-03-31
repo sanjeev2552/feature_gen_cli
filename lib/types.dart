@@ -321,6 +321,8 @@ class ContextField {
   final bool isList;
   final bool isMap;
   final bool isCustom;
+  final String jsonKey;
+  final bool hasJsonKey;
 
   ContextField({
     required this.name,
@@ -328,10 +330,20 @@ class ContextField {
     this.isList = false,
     this.isMap = false,
     this.isCustom = false,
+    required this.jsonKey,
+    required this.hasJsonKey,
   });
 
   Map<String, dynamic> toMap() {
-    return {'name': name, 'type': type, 'isList': isList, 'isMap': isMap, 'isCustom': isCustom};
+    return {
+      'name': name,
+      'type': type,
+      'isList': isList,
+      'isMap': isMap,
+      'isCustom': isCustom,
+      'jsonKey': jsonKey,
+      'hasJsonKey': hasJsonKey,
+    };
   }
 
   @override

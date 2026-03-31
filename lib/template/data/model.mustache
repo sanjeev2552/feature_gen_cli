@@ -10,7 +10,7 @@ part '{{nameLowerCase}}_model.g.dart';
 abstract class {{name}}{{#isRoot}}Model{{/isRoot}} with _${{name}}{{#isRoot}}Model{{/isRoot}} {
   const factory {{name}}{{#isRoot}}Model{{/isRoot}}({
     {{#properties}}
-    {{{type}}}? {{name}},
+    {{#hasJsonKey}}@JsonKey(name: '{{jsonKey}}'){{/hasJsonKey}} {{{type}}}? {{name}},
     {{/properties}}
   }) = _{{name}}{{#isRoot}}Model{{/isRoot}};
 

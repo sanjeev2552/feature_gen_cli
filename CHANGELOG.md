@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.2
+
+### Features
+
+- **JSON snake_case Convention Support** — Generated class properties automatically convert JSON `snake_case` representations into Dart-idiomatic `camelCase` across models, entities, and usecase parameters.
+- **Accurate Model Serialization** — Models automatically annotate properties modified into `camelCase` with `@JsonKey(name: 'original_key')` to guarantee API compatibility.
+- **Accurate Payload Serialization** — UseCase parameter classes (`PathParams`, `BodyParams`, `QueryParams`) correctly invoke original API `snake_case` keys from their `toJson()` overrides when emitting payloads.
+
 ## 1.4.1
 
 ### Fix
