@@ -1,14 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:injectable/injectable.dart';
 import 'package:{{projectName}}/core/di/injector.dart';
-{{^isMultiResponse}}
-import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
-{{/isMultiResponse}}
-{{#isMultiResponse}}
-{{#responseEntities}}
-import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLower}}_entity.dart';
-{{/responseEntities}}
-{{/isMultiResponse}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/riverpod/{{nameLowerCase}}_state.dart';
 {{#methods}}
 import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
 {{^hasUseCase}}
@@ -17,7 +10,7 @@ import 'package:{{projectName}}/features/shared/usecase/usecase.dart';
 {{/methods}}
 
 @injectable
-class {{name}}Notifier extends AsyncNotifier<{{^isMultiResponse}}{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?{{/isMultiResponse}}{{#isMultiResponse}}Object?{{/isMultiResponse}}> {
+class {{name}}Notifier extends AsyncNotifier<{{name}}State> {
     {{#methods}}
     final {{methodNamePascalCase}}UseCase _{{methodName}}UseCase;
     {{/methods}}
@@ -30,32 +23,26 @@ class {{name}}Notifier extends AsyncNotifier<{{^isMultiResponse}}{{#isList}}List
     super();
 
     @override
-    Future<{{^isMultiResponse}}{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?{{/isMultiResponse}}{{#isMultiResponse}}Object?{{/isMultiResponse}}> build() async {
-        return null;
+    Future<{{name}}State> build() async {
+        return const {{name}}State.initial();
     }
 
     {{#methods}}
     Future<void> {{methodName}}({{#hasUseCase}}{{methodNamePascalCase}}{{/hasUseCase}}{{^hasUseCase}}No{{/hasUseCase}}Params param) async {
         try {
-            state = AsyncLoading();
+            state = const AsyncValue.loading();
             {{^isMultiResponse}}
-            state = await AsyncValue.guard(() async {
-                final result = await _{{methodName}}UseCase(param);
-                return result;
-            });
+            final result = await _{{methodName}}UseCase(param);
+            state = AsyncData({{name}}State.success(result));
             {{/isMultiResponse}}
             {{#isMultiResponse}}
             {{#hasResponse}}
-            state = await AsyncValue.guard(() async {
-                final result = await _{{methodName}}UseCase(param);
-                return result;
-            });
+            final result = await _{{methodName}}UseCase(param);
+            state = AsyncData({{name}}State.{{methodName}}Success(result));
             {{/hasResponse}}
             {{^hasResponse}}
-            await AsyncValue.guard(() async {
-                await _{{methodName}}UseCase(param);
-            });
-            state = const AsyncData(null);
+            await _{{methodName}}UseCase(param);
+            state = AsyncData(const {{name}}State.{{methodName}}Success());
             {{/hasResponse}}
             {{/isMultiResponse}}
         } catch (e, stk) {
@@ -65,6 +52,6 @@ class {{name}}Notifier extends AsyncNotifier<{{^isMultiResponse}}{{#isList}}List
     {{/methods}}
 }
 
-final {{nameCamelCase}}Provider = AsyncNotifierProvider<{{name}}Notifier, {{^isMultiResponse}}{{#isList}}List<{{/isList}}{{name}}Entity{{#isList}}>{{/isList}}?{{/isMultiResponse}}{{#isMultiResponse}}Object?{{/isMultiResponse}}>(
+final {{nameCamelCase}}Provider = AsyncNotifierProvider<{{name}}Notifier, {{name}}State>(
     () => sl<{{name}}Notifier>(),
 );
