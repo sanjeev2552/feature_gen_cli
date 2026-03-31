@@ -105,7 +105,7 @@ lib/features/<feature>/
     └── screen/        <feature>_screen.dart
 ```
 
-In **multi-response mode**, the BLoC state gets one typed success factory per method:
+In **multi-response mode**, the BLoC and Riverpod states get one typed success factory per method:
 
 ```dart
 // generated user_state.dart

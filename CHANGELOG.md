@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.1
+
+### Fix
+
+- **Riverpod Typed States** — Riverpod notifiers now use explicitly generated Freezed `State` classes instead of generic `AsyncValue<Object?>`. This brings the same per-method typed success factories and explicit loading/error states to Riverpod that are available for BLoC.
+
+### Refactor
+
+- **Template Consolidation** — BLoC and Riverpod state generation now share a unified `presentation/state.mustache` template, eliminating duplicate template logic.
+
 ## 1.4.0
 
 ### Features

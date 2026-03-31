@@ -23,7 +23,7 @@ class Generator {
     final packageUri = Uri.parse('package:feature_gen_cli/');
     final libUri = await Isolate.resolvePackageUri(packageUri);
     if (libUri == null) {
-      throw StateError('Could not resolve package:feature_gen_cli – is the package activated?');
+      throw StateError('Could not resolve package:feature_gen_cli - is the package activated?');
     }
     final templateBasePath = libUri.resolve('template').toFilePath();
 
@@ -236,7 +236,7 @@ class Generator {
       );
 
       renderTemplate(
-        '$templateBasePath/presentation/bloc/state.mustache',
+        '$templateBasePath/presentation/state.mustache',
         '$basePath/presentation/bloc/${featureName}_state.dart',
         {
           ...baseCtx(),
@@ -255,6 +255,16 @@ class Generator {
 
     // ── Presentation — Riverpod ───────────────────────────────────────────
     if (context.config.riverpod == true) {
+      renderTemplate(
+        '$templateBasePath/presentation/state.mustache',
+        '$basePath/presentation/riverpod/${featureName}_state.dart',
+        {
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
+        },
+        overwrite: overwrite,
+      );
+
       renderTemplate(
         '$templateBasePath/presentation/riverpod/notifier.mustache',
         '$basePath/presentation/riverpod/${featureName}_notifier.dart',
