@@ -57,6 +57,7 @@ class CommandRunner {
       'freezed_annotation',
       'json_annotation',
       if (config.riverpod == true) 'flutter_riverpod',
+      if (config.getx == true) 'get',
     ];
     const requiredDevDependencies = [
       'build_runner',

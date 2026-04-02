@@ -34,13 +34,33 @@ void main() {
       );
 
       await runner.checkAndAddDeps(
-        config: Config(bloc: false, riverpod: true),
+        config: Config(bloc: false, riverpod: true, getx: false),
         workingDirectory: '/tmp',
       );
 
       final (_, args, _) = fakeProcess.calls.first;
       expect(args, contains('flutter_riverpod'));
       expect(args, isNot(contains('flutter_bloc')));
+      expect(args, isNot(contains('get')));
+    });
+
+    test('adds missing deps for getx config', () async {
+      final fakeProcess = FakeProcessRunner();
+      final runner = CommandRunner(
+        processRunner: fakeProcess.call,
+        yamlHelper: FakeYamlHelper(dependencies: {}, devDependencies: {}),
+        commandHelper: TestCommandHelper(),
+      );
+
+      await runner.checkAndAddDeps(
+        config: Config(bloc: false, riverpod: false, getx: true),
+        workingDirectory: '/tmp',
+      );
+
+      final (_, args, _) = fakeProcess.calls.first;
+      expect(args, contains('get'));
+      expect(args, isNot(contains('flutter_bloc')));
+      expect(args, isNot(contains('flutter_riverpod')));
     });
 
     test('does not add deps when already present', () async {

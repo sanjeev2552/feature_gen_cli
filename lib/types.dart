@@ -97,24 +97,31 @@ class Schema {
 class Config {
   final bool? bloc;
   final bool? riverpod;
+  final bool? getx;
 
-  Config({this.bloc, this.riverpod}) {
-    if (bloc == null && riverpod == null) {
+  Config({this.bloc, this.riverpod, this.getx}) {
+    if (bloc == null && riverpod == null && getx == null) {
       return;
     }
-    if (!(bloc! ^ riverpod!)) {
+    // Only one of them should be true, handle it by converting true to 1 and false/null to 0
+    final sum = (bloc == true ? 1 : 0) + (riverpod == true ? 1 : 0) + (getx == true ? 1 : 0);
+    if (sum != 1) {
       throw ArgumentError(
-        'Exactly one of "bloc" or "riverpod" must be true in the config section.',
+        'Exactly one of "bloc", "riverpod", or "getx" must be true in the config section.',
       );
     }
   }
 
   factory Config.fromJson(Map<String, dynamic> json) {
-    return Config(bloc: json['bloc'] as bool?, riverpod: json['riverpod'] as bool?);
+    return Config(
+      bloc: json['bloc'] as bool?,
+      riverpod: json['riverpod'] as bool?,
+      getx: json['getx'] as bool?,
+    );
   }
 
   Map<String, dynamic> toMap() {
-    return {'bloc': bloc, 'riverpod': riverpod};
+    return {'bloc': bloc, 'riverpod': riverpod, 'getx': getx};
   }
 }
 

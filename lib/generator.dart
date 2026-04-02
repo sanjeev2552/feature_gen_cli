@@ -37,7 +37,8 @@ class Generator {
       if (generateUseCase) '$basePath/domain/usecases',
       if (context.config.bloc == true) '$basePath/presentation/bloc',
       if (context.config.riverpod == true) '$basePath/presentation/riverpod',
-      if (context.config.bloc == true || context.config.riverpod == true)
+      if (context.config.getx == true) '$basePath/presentation/getx',
+      if (context.config.bloc == true || context.config.riverpod == true || context.config.getx == true)
         '$basePath/presentation/screen',
     ];
 
@@ -277,6 +278,46 @@ class Generator {
 
       renderTemplate(
         '$templateBasePath/presentation/screen/screen_riverpod.mustache',
+        '$basePath/presentation/screen/${featureName}_screen.dart',
+        context.toMap(),
+        overwrite: overwrite,
+      );
+    }
+
+    // ── Presentation — GetX ───────────────────────────────────────────
+    if (context.config.getx == true) {
+      renderTemplate(
+        '$templateBasePath/presentation/getx/state.mustache',
+        '$basePath/presentation/getx/${featureName}_state.dart',
+        {
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
+        },
+        overwrite: overwrite,
+      );
+
+      renderTemplate(
+        '$templateBasePath/presentation/getx/controller.mustache',
+        '$basePath/presentation/getx/${featureName}_controller.dart',
+        {
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
+        },
+        overwrite: overwrite,
+      );
+
+      renderTemplate(
+        '$templateBasePath/presentation/getx/binding.mustache',
+        '$basePath/presentation/getx/${featureName}_binding.dart',
+        {
+          ...baseCtx(),
+          'methods': enrichedMethods(context.methods),
+        },
+        overwrite: overwrite,
+      );
+
+      renderTemplate(
+        '$templateBasePath/presentation/screen/screen_getx.mustache',
         '$basePath/presentation/screen/${featureName}_screen.dart',
         context.toMap(),
         overwrite: overwrite,

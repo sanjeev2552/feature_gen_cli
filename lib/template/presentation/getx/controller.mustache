@@ -1,0 +1,59 @@
+import 'package:get/get.dart';
+import 'package:injectable/injectable.dart';
+
+import 'package:{{projectName}}/features/{{nameLowerCase}}/presentation/getx/{{nameLowerCase}}_state.dart';
+
+{{^isMultiResponse}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLowerCase}}_entity.dart';
+{{/isMultiResponse}}
+{{#isMultiResponse}}
+{{#responseEntities}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/entities/{{nameLower}}_entity.dart';
+{{/responseEntities}}
+{{/isMultiResponse}}
+{{#methods}}
+import 'package:{{projectName}}/features/{{nameLowerCase}}/domain/usecases/{{methodNameLowerCase}}_usecase.dart';
+{{^hasUseCase}}
+import 'package:{{projectName}}/features/shared/usecase/usecase.dart';
+{{/hasUseCase}}
+{{/methods}}
+
+@injectable
+class {{name}}Controller extends GetxController {
+    {{#methods}}
+    final {{methodNamePascalCase}}UseCase _{{methodName}}UseCase;
+    {{/methods}}
+
+    {{name}}Controller({
+        {{#methods}}
+        required {{methodNamePascalCase}}UseCase {{methodName}}UseCase,
+        {{/methods}}
+    }) : {{#methods}}_{{methodName}}UseCase = {{methodName}}UseCase,{{/methods}}
+    super();
+
+    final state = const {{name}}State.initial().obs;
+
+    {{#methods}}
+    Future<void> {{methodName}}({{#hasUseCase}}{{methodNamePascalCase}}{{/hasUseCase}}{{^hasUseCase}}No{{/hasUseCase}}Params param) async {
+        try {
+            state.value = const {{name}}State.loading();
+            {{^isMultiResponse}}
+            final result = await _{{methodName}}UseCase(param);
+            state.value = {{name}}State.success(result);
+            {{/isMultiResponse}}
+            {{#isMultiResponse}}
+            {{#hasResponse}}
+            final result = await _{{methodName}}UseCase(param);
+            state.value = {{name}}State.{{methodName}}Success(result);
+            {{/hasResponse}}
+            {{^hasResponse}}
+            await _{{methodName}}UseCase(param);
+            state.value = const {{name}}State.{{methodName}}Success();
+            {{/hasResponse}}
+            {{/isMultiResponse}}
+        } catch (e) {
+            state.value = {{name}}State.error(e.toString());
+        }
+    }
+    {{/methods}}
+}
