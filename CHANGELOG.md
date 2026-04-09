@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.3
+
+### Features
+
+- **GetX Support** — Added `"getx": true` as a third state-management option in the `config` section alongside `bloc` and `riverpod`.
+- **GetX Controller** — Generates a Freezed-state-driven `GetxController` with typed success states, loading, and error handling per method.
+- **GetX Binding** — Generates a `Bindings` class that lazily registers the controller via `get_it` (`sl`).
+- **GetX State** — Generates a shared Freezed `State` class (identical structure to BLoC/Riverpod states) inside `presentation/getx/`.
+- **GetX Screen** — Generates a starter `Screen` widget using `Obx` to react to state changes in `presentation/screen/`.
+- **Multi-Response + GetX** — All multi-response features (per-method typed success factories, void methods) are fully supported under GetX.
+
+### Refactor
+
+- **Schema Validation** — Updated parser and `Config` type to accept exactly one of `"bloc"`, `"riverpod"`, or `"getx"` being `true`; validation error message updated accordingly.
+- **Directory Scaffolding** — Generator now creates the `presentation/getx/` directory when GetX is selected.
+
 ## 1.4.2
 
 ### Features

@@ -38,7 +38,7 @@ The schema is a single JSON file requiring three sections: `config`, `api.method
 
 ```json
 {
-  "config": { "bloc": true, "riverpod": false },
+  "config": { "bloc": true },
   "api": {
     "methods": {
       "getUser":    {},
@@ -56,7 +56,7 @@ When different API methods return different types, define each response type by 
 
 ```json
 {
-  "config": { "bloc": true, "riverpod": false },
+  "config": { "riverpod": true },
   "api": {
     "methods": {
       "getUser":      { "response": "user" },
@@ -82,7 +82,7 @@ When different API methods return different types, define each response type by 
 
 ### Common Options
 
-- **`config`**: Both keys (`bloc` and `riverpod`) are required; exactly one must be `true`.
+- **`config`**: Exactly one of `"bloc"`, `"riverpod"`, or `"getx"` must be `true`.
 - **`api.methods`**: Define endpoints (camelCase). Optionally include `params`, `body`, or `query` to generate `UseCase` and param classes.
 - **`response`**: Define entity fields. Supported primitives: `"string"`, `"int"`, `"double"`, `"bool"`, `"list"`, `"map"`. Supports nested objects and arrays.
 
@@ -103,7 +103,9 @@ lib/features/<feature>/
     ├── repositories/  <feature>_repository.dart
     └── usecases/      <method>_usecase.dart
 └── presentation/
-    ├── bloc/          <feature>_bloc.dart, _event.dart, _state.dart
+    ├── bloc/          <feature>_bloc.dart, _event.dart, _state.dart   (bloc)
+    ├── riverpod/      <feature>_notifier.dart, _state.dart             (riverpod)
+    ├── getx/          <feature>_controller.dart, _state.dart, _binding.dart  (getx)
     └── screen/        <feature>_screen.dart
 ```
 
@@ -124,7 +126,7 @@ By default, the CLI only generates missing files and will not overwrite existing
 
 ## Troubleshooting
 
-- **Schema validation errors**: Ensure `config`, `api.methods`, and `response` exist, and that exactly one of `config.bloc` or `config.riverpod` is `true`.
+- **Schema validation errors**: Ensure `config`, `api.methods`, and `response` exist, and that exactly one of `config.bloc`, `config.riverpod`, or `config.getx` is `true`.
 - **`build_runner` failed**: Re-run it manually: `dart run build_runner build -d`.
 
 ## Support ❤️

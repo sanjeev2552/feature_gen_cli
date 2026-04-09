@@ -287,7 +287,7 @@ class Generator {
     // ── Presentation — GetX ───────────────────────────────────────────
     if (context.config.getx == true) {
       renderTemplate(
-        '$templateBasePath/presentation/getx/state.mustache',
+        '$templateBasePath/presentation/state.mustache',
         '$basePath/presentation/getx/${featureName}_state.dart',
         {
           ...baseCtx(),
