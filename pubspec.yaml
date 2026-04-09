@@ -1,6 +1,6 @@
 name: feature_gen_cli
 description: A command-line tool for generating feature modules.
-version: 1.4.0
+version: 1.4.2
 
 repository: https://github.com/sanjeev2552/feature_gen
 homepage: https://github.com/sanjeev2552/feature_gen

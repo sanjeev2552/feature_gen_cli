@@ -86,9 +86,11 @@ void main() {
 
   group('Context mapping', () {
     test('ContextField toMap', () {
-      final field = ContextField(name: 'id', type: 'int', isList: false, isCustom: false);
+      final field = ContextField(name: 'id', type: 'int', isList: false, isCustom: false, jsonKey: 'id', hasJsonKey: false);
       expect(field.toMap(), containsPair('name', 'id'));
       expect(field.toMap(), containsPair('type', 'int'));
+      expect(field.toMap(), containsPair('jsonKey', 'id'));
+      expect(field.toMap(), containsPair('hasJsonKey', false));
     });
 
     test('ContextMethod toMap shape', () {

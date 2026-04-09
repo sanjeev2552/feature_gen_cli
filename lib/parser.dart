@@ -273,17 +273,22 @@ class Parser {
   ) {
     return fields.entries.map((entry) {
       final value = entry.value;
+      final originalKey = entry.key;
+      final camelCaseKey = originalKey.contains('_') ? originalKey.toCamelCase() : originalKey;
+      final hasJsonKey = camelCaseKey != originalKey;
 
       // If nested JSON object → treat as custom model type
       if (value is Map<String, dynamic>) {
         final someData = buildContextFields(value, nestedFields);
         nestedFields.add(
-          NestedContextField(name: entry.key.camelCaseToPascalCase(), properties: someData),
+          NestedContextField(name: camelCaseKey.camelCaseToPascalCase(), properties: someData),
         );
         return ContextField(
-          name: entry.key,
-          type: entry.key.camelCaseToPascalCase(),
+          name: camelCaseKey,
+          type: camelCaseKey.camelCaseToPascalCase(),
           isCustom: true,
+          jsonKey: originalKey,
+          hasJsonKey: hasJsonKey,
         );
       }
 
@@ -294,20 +299,33 @@ class Parser {
         if (value.first is Map<String, dynamic>) {
           nestedFields.add(
             NestedContextField(
-              name: entry.key.camelCaseToPascalCase(),
+              name: camelCaseKey.camelCaseToPascalCase(),
               properties: buildContextFields(value.first, nestedFields),
             ),
           );
-          type = entry.key.camelCaseToPascalCase();
+          type = camelCaseKey.camelCaseToPascalCase();
           isCustom = true;
         } else {
           type = getDartType(value.first);
         }
-        return ContextField(name: entry.key, type: "List<$type>", isList: true, isCustom: isCustom);
+        return ContextField(
+          name: camelCaseKey, 
+          type: "List<$type>", 
+          isList: true, 
+          isCustom: isCustom,
+          jsonKey: originalKey,
+          hasJsonKey: hasJsonKey,
+        );
       }
 
       final type = getDartType(value);
-      return ContextField(name: entry.key, type: type, isList: type.contains('List'));
+      return ContextField(
+        name: camelCaseKey, 
+        type: type, 
+        isList: type.contains('List'),
+        jsonKey: originalKey,
+        hasJsonKey: hasJsonKey,
+      );
     }).toList();
   }
 
