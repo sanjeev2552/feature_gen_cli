@@ -17,7 +17,7 @@ Map<String, dynamic> blocSchema() {
         },
         'searchUsers': <String, dynamic>{
           'query': {
-            'tags': ['string']
+            'tags': ['string'],
           },
         },
       },
@@ -27,7 +27,7 @@ Map<String, dynamic> blocSchema() {
       'profile': {'name': 'string'},
       'roles': ['string'],
       'addresses': [
-        {'street': 'string'}
+        {'street': 'string'},
       ],
     },
   };
@@ -37,14 +37,9 @@ Map<String, dynamic> riverpodSchema() {
   return {
     'config': {'bloc': false, 'riverpod': true, 'getx': false},
     'api': {
-      'methods': <String, dynamic>{
-        'getUser': <String, dynamic>{},
-      },
+      'methods': <String, dynamic>{'getUser': <String, dynamic>{}},
     },
-    'response': {
-      'id': 'int',
-      'name': 'string',
-    },
+    'response': {'id': 'int', 'name': 'string'},
   };
 }
 
@@ -52,14 +47,9 @@ Map<String, dynamic> getxSchema() {
   return {
     'config': {'bloc': false, 'riverpod': false, 'getx': true},
     'api': {
-      'methods': <String, dynamic>{
-        'getUser': <String, dynamic>{},
-      },
+      'methods': <String, dynamic>{'getUser': <String, dynamic>{}},
     },
-    'response': {
-      'id': 'int',
-      'name': 'string',
-    },
+    'response': {'id': 'int', 'name': 'string'},
   };
 }
 
@@ -67,12 +57,10 @@ Map<String, dynamic> listResponseSchema() {
   return {
     'config': {'bloc': true, 'riverpod': false},
     'api': {
-      'methods': <String, dynamic>{
-        'getUsers': <String, dynamic>{},
-      },
+      'methods': <String, dynamic>{'getUsers': <String, dynamic>{}},
     },
     'response': [
-      {'id': 'int'}
+      {'id': 'int'},
     ],
   };
 }
@@ -103,11 +91,7 @@ Map<String, dynamic> multiResponseSchema() {
         'email': 'string',
         'address': {'street': 'string', 'city': 'string'},
       },
-      'token': {
-        'accessToken': 'string',
-        'refreshToken': 'string',
-        'tokenType': 'string',
-      },
+      'token': {'accessToken': 'string', 'refreshToken': 'string', 'tokenType': 'string'},
     },
   };
 }

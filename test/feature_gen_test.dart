@@ -75,17 +75,17 @@ class _ThrowingParser extends FakeParser {
   _ThrowingParser() : super(Schema(), _dummyContext());
 
   static Context _dummyContext() => Context(
-        name: '',
-        nameLowerCase: '',
-        nameCamelCase: '',
-        isList: false,
-        fields: [],
-        methods: [],
-        generateUseCase: false,
-        projectRoot: '/tmp',
-        projectName: 'app',
-        config: const Config(),
-      );
+    name: '',
+    nameLowerCase: '',
+    nameCamelCase: '',
+    isList: false,
+    fields: [],
+    methods: [],
+    generateUseCase: false,
+    projectRoot: '/tmp',
+    projectName: 'app',
+    config: const Config(),
+  );
 
   @override
   Schema parse(String path) => throw StateError('simulated parse failure');

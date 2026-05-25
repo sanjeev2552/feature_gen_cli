@@ -26,10 +26,7 @@ void main() {
       final helper = TestCommandHelper();
       final parser = Parser(commandHelper: helper);
 
-      expect(
-        () => parser.parse('/nonexistent/path/schema.json'),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => parser.parse('/nonexistent/path/schema.json'), throwsA(isA<StateError>()));
       expect(helper.errors, isNotEmpty);
     });
 
@@ -42,10 +39,7 @@ void main() {
       final helper = TestCommandHelper();
       final parser = Parser(commandHelper: helper);
 
-      expect(
-        () => parser.parse(file.path),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => parser.parse(file.path), throwsA(isA<StateError>()));
       expect(helper.errors.first, contains('Invalid JSON'));
     });
   });
@@ -96,10 +90,7 @@ void main() {
       // Schema missing api → fails validation.
       final badSchema = Schema(response: {}, config: const Config());
 
-      await expectLater(
-        parser.buildContext('user', badSchema),
-        throwsA(isA<StateError>()),
-      );
+      await expectLater(parser.buildContext('user', badSchema), throwsA(isA<StateError>()));
     });
 
     test('builds context with correct naming and usecase flags', () async {

@@ -21,7 +21,9 @@ extension StringExtension on String {
     return words.first.toLowerCase() +
         words
             .skip(1)
-            .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
+            .map(
+              (word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+            )
             .join();
   }
 

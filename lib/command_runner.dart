@@ -10,18 +10,22 @@ import 'package:feature_gen_cli/yaml_helper.dart';
 /// error handling stay consistent across the CLI. These operations mutate the
 /// target project's `pubspec.yaml` and generated files.
 /// Signature for running a process, injected for testability.
-typedef ProcessRunner = Future<ProcessResult> Function(
-  String executable,
-  List<String> args, {
-  String? workingDirectory,
-});
+typedef ProcessRunner =
+    Future<ProcessResult> Function(
+      String executable,
+      List<String> args, {
+      String? workingDirectory,
+    });
 
 class CommandRunner {
   /// Creates a runner with optional injected process/YAML helpers for tests.
-  CommandRunner({ProcessRunner? processRunner, YamlHelper? yamlHelper, CommandHelper? commandHelper})
-      : _processRunner = processRunner ?? Process.run,
-        _yamlHelper = yamlHelper ?? YamlHelper(),
-        _commandHelper = commandHelper ?? CommandHelper();
+  CommandRunner({
+    ProcessRunner? processRunner,
+    YamlHelper? yamlHelper,
+    CommandHelper? commandHelper,
+  }) : _processRunner = processRunner ?? Process.run,
+       _yamlHelper = yamlHelper ?? YamlHelper(),
+       _commandHelper = commandHelper ?? CommandHelper();
 
   final ProcessRunner _processRunner;
   final YamlHelper _yamlHelper;

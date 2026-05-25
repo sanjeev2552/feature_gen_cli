@@ -49,9 +49,7 @@ class Schema {
       final responseMap = Map<String, dynamic>.from(rawResponse);
       // Detect multi-response: ALL top-level values must be Maps (or Lists of Maps).
       final allObjects = responseMap.values.every(
-        (v) =>
-            v is Map ||
-            (v is List && v.isNotEmpty && v.first is Map),
+        (v) => v is Map || (v is List && v.isNotEmpty && v.first is Map),
       );
 
       if (allObjects && responseMap.isNotEmpty) {
@@ -69,9 +67,7 @@ class Schema {
     }
 
     return Schema(
-      api: json['api'] == null
-          ? null
-          : Api.fromJson(Map<String, dynamic>.from(json['api'] as Map)),
+      api: json['api'] == null ? null : Api.fromJson(Map<String, dynamic>.from(json['api'] as Map)),
       response: singleResponse,
       responses: multiResponses,
       config: json['config'] == null

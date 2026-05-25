@@ -20,10 +20,10 @@ class FeatureGen {
     Generator? generator,
     CommandRunner? commandRunner,
     CommandHelper? commandHelper,
-  })  : _parser = parser ?? Parser(),
-        _generator = generator ?? Generator(),
-        _commandRunner = commandRunner ?? CommandRunner(),
-        _commandHelper = commandHelper ?? CommandHelper();
+  }) : _parser = parser ?? Parser(),
+       _generator = generator ?? Generator(),
+       _commandRunner = commandRunner ?? CommandRunner(),
+       _commandHelper = commandHelper ?? CommandHelper();
 
   final Parser _parser;
   final Generator _generator;

@@ -16,15 +16,11 @@ void main() {
 
       final templateFile = File('${tempDir.path}/template.mustache')
         ..writeAsStringSync('Hello {{name}}');
-      final outFile = File('${tempDir.path}/output.dart')
-        ..writeAsStringSync('Existing content');
+      final outFile = File('${tempDir.path}/output.dart')..writeAsStringSync('Existing content');
 
-      Generator().renderTemplate(
-        templateFile.path,
-        outFile.path,
-        {'name': 'New'},
-        overwrite: false,
-      );
+      Generator().renderTemplate(templateFile.path, outFile.path, {
+        'name': 'New',
+      }, overwrite: false);
 
       expect(outFile.readAsStringSync(), 'Existing content');
     });
@@ -35,15 +31,9 @@ void main() {
 
       final templateFile = File('${tempDir.path}/template.mustache')
         ..writeAsStringSync('Hello {{name}}');
-      final outFile = File('${tempDir.path}/output.dart')
-        ..writeAsStringSync('Existing content');
+      final outFile = File('${tempDir.path}/output.dart')..writeAsStringSync('Existing content');
 
-      Generator().renderTemplate(
-        templateFile.path,
-        outFile.path,
-        {'name': 'New'},
-        overwrite: true,
-      );
+      Generator().renderTemplate(templateFile.path, outFile.path, {'name': 'New'}, overwrite: true);
 
       expect(outFile.readAsStringSync(), 'Hello New');
     });
@@ -62,11 +52,7 @@ void main() {
           overwrite: true,
         ),
         throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('Template not found'),
-          ),
+          isA<StateError>().having((e) => e.message, 'message', contains('Template not found')),
         ),
       );
     });

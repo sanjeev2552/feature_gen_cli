@@ -32,7 +32,7 @@ void main() {
         'config': {'bloc': true, 'riverpod': false},
         'api': {'methods': {}},
         'response': [
-          {'id': 'int'}
+          {'id': 'int'},
         ],
       });
       expect(schema.isMultiResponse, isFalse);
@@ -47,7 +47,7 @@ void main() {
 
     test('ApiMethod parses array-wrapped response key', () {
       final method = ApiMethod.fromJson({
-        'response': ['user']
+        'response': ['user'],
       });
       expect(method.response, 'user');
       expect(method.responseIsList, isTrue);
@@ -76,18 +76,21 @@ void main() {
     });
 
     test('toMap reflects the active layer as bool flags', () {
-      expect(
-        Config(layer: PresentationLayer.bloc).toMap(),
-        {'bloc': true, 'riverpod': false, 'getx': false},
-      );
-      expect(
-        Config(layer: PresentationLayer.riverpod).toMap(),
-        {'bloc': false, 'riverpod': true, 'getx': false},
-      );
-      expect(
-        Config(layer: PresentationLayer.getx).toMap(),
-        {'bloc': false, 'riverpod': false, 'getx': true},
-      );
+      expect(Config(layer: PresentationLayer.bloc).toMap(), {
+        'bloc': true,
+        'riverpod': false,
+        'getx': false,
+      });
+      expect(Config(layer: PresentationLayer.riverpod).toMap(), {
+        'bloc': false,
+        'riverpod': true,
+        'getx': false,
+      });
+      expect(Config(layer: PresentationLayer.getx).toMap(), {
+        'bloc': false,
+        'riverpod': false,
+        'getx': true,
+      });
     });
   });
 

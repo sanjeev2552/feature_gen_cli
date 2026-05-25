@@ -125,10 +125,7 @@ class Generator {
       renderTemplate(
         '$templateBasePath/data/model.mustache',
         '$basePath/data/models/${featureName}_model.dart',
-        {
-          ...context.toMap(),
-          'featureNameLower': featureName,
-        },
+        {...context.toMap(), 'featureNameLower': featureName},
         overwrite: overwrite,
       );
 
@@ -144,10 +141,7 @@ class Generator {
     renderTemplate(
       '$templateBasePath/domain/repository.mustache',
       '$basePath/domain/repositories/${featureName}_repository.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -155,10 +149,7 @@ class Generator {
     renderTemplate(
       '$templateBasePath/data/repository_impl.mustache',
       '$basePath/data/repositories/${featureName}_repository_impl.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -166,10 +157,7 @@ class Generator {
     renderTemplate(
       '$templateBasePath/data/remote_datasource.mustache',
       '$basePath/data/datasources/${featureName}_remote_datasource.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -253,10 +241,7 @@ class Generator {
     renderTemplate(
       '$templateBasePath/presentation/bloc/bloc.mustache',
       '$basePath/presentation/bloc/${featureName}_bloc.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -266,10 +251,7 @@ class Generator {
       {
         'name': context.name,
         'projectName': context.projectName,
-        'methods': enriched.map((e) => {
-          ...e,
-          'nameLowerCase': context.nameLowerCase,
-        }).toList(),
+        'methods': enriched.map((e) => {...e, 'nameLowerCase': context.nameLowerCase}).toList(),
       },
       overwrite: overwrite,
     );
@@ -277,10 +259,7 @@ class Generator {
     renderTemplate(
       '$templateBasePath/presentation/state.mustache',
       '$basePath/presentation/bloc/${featureName}_state.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -305,20 +284,14 @@ class Generator {
     renderTemplate(
       '$templateBasePath/presentation/state.mustache',
       '$basePath/presentation/riverpod/${featureName}_state.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
     renderTemplate(
       '$templateBasePath/presentation/riverpod/notifier.mustache',
       '$basePath/presentation/riverpod/${featureName}_notifier.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -343,30 +316,21 @@ class Generator {
     renderTemplate(
       '$templateBasePath/presentation/state.mustache',
       '$basePath/presentation/getx/${featureName}_state.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
     renderTemplate(
       '$templateBasePath/presentation/getx/controller.mustache',
       '$basePath/presentation/getx/${featureName}_controller.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
     renderTemplate(
       '$templateBasePath/presentation/getx/binding.mustache',
       '$basePath/presentation/getx/${featureName}_binding.dart',
-      {
-        ...baseCtx,
-        'methods': enriched,
-      },
+      {...baseCtx, 'methods': enriched},
       overwrite: overwrite,
     );
 
@@ -394,20 +358,13 @@ class Generator {
     }
 
     // Return all entities (they are already unique by construction).
-    return context.entities
-        .map((e) => {'name': e.name, 'nameLower': e.nameLower})
-        .toList();
+    return context.entities.map((e) => {'name': e.name, 'nameLower': e.nameLower}).toList();
   }
 
   /// Returns a copy of [methods] enriched with `methodNameLowerCase` for template use.
   List<Map<String, dynamic>> _enrichedMethods(List<ContextMethod> methods) {
     return methods
-        .map(
-          (e) => {
-            ...e.toMap(),
-            'methodNameLowerCase': e.methodName.camelCaseToSnakeCase(),
-          },
-        )
+        .map((e) => {...e.toMap(), 'methodNameLowerCase': e.methodName.camelCaseToSnakeCase()})
         .toList();
   }
 

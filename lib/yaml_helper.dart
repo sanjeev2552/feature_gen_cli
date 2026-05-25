@@ -13,8 +13,7 @@ class YamlHelper {
   /// Creates a helper with an optional [CommandHelper] for consistent output.
   ///
   /// Provide a fake in tests to capture or suppress output.
-  YamlHelper({CommandHelper? commandHelper})
-      : _commandHelper = commandHelper ?? CommandHelper();
+  YamlHelper({CommandHelper? commandHelper}) : _commandHelper = commandHelper ?? CommandHelper();
 
   final CommandHelper _commandHelper;
 
