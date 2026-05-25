@@ -230,7 +230,7 @@ class Parser {
     String? responseEntityName;
     String? responseEntityNameLower;
     String? responseEntityCamelCase;
-    bool responseIsList = method.value.responseIsList;
+    final bool responseIsList = method.value.responseIsList;
     bool hasResponse = false;
 
     final rawResponse = method.value.response;

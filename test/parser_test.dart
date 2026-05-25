@@ -51,7 +51,7 @@ void main() {
 
       final schema = Schema(
         response: {},
-        config: Config(layer: PresentationLayer.bloc),
+        config: const Config(layer: PresentationLayer.bloc),
       );
       final ok = parser.validateSchema(schema);
 

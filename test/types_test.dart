@@ -76,17 +76,17 @@ void main() {
     });
 
     test('toMap reflects the active layer as bool flags', () {
-      expect(Config(layer: PresentationLayer.bloc).toMap(), {
+      expect(const Config(layer: PresentationLayer.bloc).toMap(), {
         'bloc': true,
         'riverpod': false,
         'getx': false,
       });
-      expect(Config(layer: PresentationLayer.riverpod).toMap(), {
+      expect(const Config(layer: PresentationLayer.riverpod).toMap(), {
         'bloc': false,
         'riverpod': true,
         'getx': false,
       });
-      expect(Config(layer: PresentationLayer.getx).toMap(), {
+      expect(const Config(layer: PresentationLayer.getx).toMap(), {
         'bloc': false,
         'riverpod': false,
         'getx': true,
@@ -170,7 +170,7 @@ void main() {
         generateUseCase: false,
         projectRoot: '/tmp',
         projectName: 'sample',
-        config: Config(layer: PresentationLayer.bloc),
+        config: const Config(layer: PresentationLayer.bloc),
       );
       final map = context.toMap();
       expect(map['name'], 'User');
