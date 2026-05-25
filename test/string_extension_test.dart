@@ -11,6 +11,12 @@ void main() {
       expect('user_profile'.toCamelCase(), 'userProfile');
     });
 
+    test('toCamelCase handles consecutive underscores without crashing', () {
+      // Previously threw RangeError on empty word segment.
+      expect(() => 'my__field'.toCamelCase(), returnsNormally);
+      expect('my__field'.toCamelCase(), 'myField');
+    });
+
     test('camelCaseToSnakeCase converts camelCase', () {
       expect('userProfile'.camelCaseToSnakeCase(), 'user_profile');
     });
@@ -20,3 +26,4 @@ void main() {
     });
   });
 }
+

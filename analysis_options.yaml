@@ -13,15 +13,16 @@
 
 include: package:lints/recommended.yaml
 
-# Uncomment the following section to specify additional rules.
-
-# linter:
-#   rules:
-#     - camel_case_types
-
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+linter:
+  rules:
+    # Catch mutable locals that could be declared final.
+    - prefer_final_locals
+    # Surface any Future that is returned but not awaited.
+    - unawaited_futures
+    # Encourage compile-time constants where possible.
+    - prefer_const_constructors
+    # Ensure output goes through stdout/stderr, not print().
+    - avoid_print
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints

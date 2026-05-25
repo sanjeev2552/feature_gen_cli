@@ -45,7 +45,7 @@ Manage your Flutter feature modules.
 
 Common commands:
 
-  dart tool/feature_gen_cli.dart <feature_name> <schema.json>
+  feature_gen_cli <feature_name> <schema.json>
     Generate a new feature module using the provided feature name and schema definition.
 
 Required parameters:
@@ -60,12 +60,12 @@ Required parameters:
 Global options:
   -h, --help        Show this help message.
   -o, --overwrite   Overwrite existing generated files.
-      --version:    Print the current version.
-  
-Example:
-  dart tool/feature_gen_cli.dart example schema.json
+      --version     Print the current version.
 
-Run 'dart tool/feature_gen_cli.dart -h' for more information''';
+Example:
+  feature_gen_cli example schema.json
+
+Run 'feature_gen_cli -h' for more information''';
 
     stdout.writeln(helpInfo);
     exit(0);

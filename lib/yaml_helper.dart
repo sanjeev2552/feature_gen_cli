@@ -10,13 +10,22 @@ import 'package:yaml/yaml.dart';
 /// on generation and CLI behavior. It reads the installed package pubspec
 /// for version info and the target project pubspec for names/dependencies.
 class YamlHelper {
+  /// Creates a helper with an optional [CommandHelper] for consistent output.
+  ///
+  /// Provide a fake in tests to capture or suppress output.
+  YamlHelper({CommandHelper? commandHelper})
+      : _commandHelper = commandHelper ?? CommandHelper();
+
+  final CommandHelper _commandHelper;
+
   /// Returns the version of the `feature_gen_cli` package from its own pubspec.
   Future<String?> getVersion() async {
     final packageUri = Uri.parse('package:feature_gen_cli/');
     final libUri = await Isolate.resolvePackageUri(packageUri);
 
     if (libUri == null) {
-      CommandHelper().error('Could not resolve package uri for package:feature_gen_cli');
+      _commandHelper.error('Could not resolve package uri for package:feature_gen_cli');
+      // error() exits the process; this return is a safety net for test doubles.
       return null;
     }
 
@@ -30,7 +39,8 @@ class YamlHelper {
 
   /// Returns the `name` field from the target project's pubspec.yaml.
   ///
-  /// Falls back to the directory name when parsing fails.
+  /// Falls back to the directory name with a warning when parsing fails, so
+  /// generation can continue rather than aborting the entire pipeline.
   Future<String> getProjectName({required String workingDirectory}) async {
     try {
       final content = await File('$workingDirectory/pubspec.yaml').readAsString();
@@ -39,14 +49,18 @@ class YamlHelper {
 
       return projectName;
     } catch (e) {
-      CommandHelper().error('Could not get project name: $e');
-      return workingDirectory.split(Platform.pathSeparator).last;
+      final fallback = workingDirectory.split(Platform.pathSeparator).last;
+      _commandHelper.warning(
+        'Could not read project name from pubspec.yaml: $e\n'
+        'Falling back to directory name: "$fallback".',
+      );
+      return fallback;
     }
   }
 
   /// Returns the `dependencies` and `dev_dependencies` maps from the target project's pubspec.
   ///
-  /// Returns `(null, null)` if the pubspec cannot be read.
+  /// Returns `(null, null)` with a warning if the pubspec cannot be read.
   Future<(YamlMap?, YamlMap?)> getDependencies({required String workingDirectory}) async {
     try {
       final content = await File('$workingDirectory/pubspec.yaml').readAsString();
@@ -56,7 +70,7 @@ class YamlHelper {
 
       return (dependencies, devDependencies);
     } catch (e) {
-      CommandHelper().error('Could not get dependencies: $e');
+      _commandHelper.warning('Could not read dependencies from pubspec.yaml: $e');
       return (null, null);
     }
   }

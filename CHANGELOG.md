@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.5.0
+
+### Bug Fixes
+
+- **stderr routing** — Sub-process error output (from `dart pub add`, `build_runner`, etc.) is now correctly written to `stderr` instead of `stdout`, so CI pipelines and IDEs can distinguish errors from normal output.
+- **Invalid schema no longer silently ignored** — `Parser.buildContext` now throws a `StateError` when schema validation fails instead of returning a broken empty `Context` that would propagate through the entire pipeline.
+- **`toCamelCase` crash on consecutive underscores** — Keys like `"my__field"` previously caused a `RangeError`. Empty word segments are now skipped safely, matching the existing guard in `toPascalCase`.
+- **Dead code removed** — `Schema.responseParser` was declared but never called; it has been removed. The equivalent logic already existed inline in `Schema.fromJson`.
+
+### Robustness
+
+- **Friendly JSON parse errors** — `Parser.parse` now catches `FormatException` from `jsonDecode` and reports a clear message (`Invalid JSON in schema file "..."`) instead of dumping a raw stack trace.
+- **Template file errors** — `Generator.renderTemplate` wraps file reads in a `FileSystemException` catch and throws a descriptive `StateError` (`Template not found at "..."`) when a template is missing, making corrupt installs easy to diagnose.
+- **`YamlHelper` graceful fallback** — `getProjectName` and `getDependencies` now issue a warning and continue instead of calling `exit(1)` in their catch blocks (which left unreachable return statements). `CommandHelper` is now injectable for consistent output and testability.
+- **`Config` validation moved to parser** — `Config` no longer throws `ArgumentError` in its constructor during JSON deserialization. Validation (exactly one layer must be set) is now handled by `Parser.validateSchema`, where it can use the user-friendly `CommandHelper.error()` path.
+
+### Architecture
+
+- **`PresentationLayer` enum** — The three nullable `bool?` fields (`bloc`, `riverpod`, `getx`) on `Config` have been replaced with a single `PresentationLayer? layer` enum. All `config.bloc == true` checks in the generator and command runner now use `config.layer == PresentationLayer.bloc`. The `Config.toMap()` output is unchanged so Mustache templates are unaffected.
+- **`generateBoilerplate` refactored** — Presentation-layer code is extracted into three focused private helpers (`_generateBlocFiles`, `_generateRiverpodFiles`, `_generateGetXFiles`) and dispatched via an exhaustive `switch` on the enum. Adding a new state-management layer now requires only one new helper.
+- **`hasUseCase` is a computed getter** — `ContextMethod.hasUseCase` is now `bool get hasUseCase => hasParams || hasBody || hasQuery` instead of a redundant constructor parameter, eliminating the possibility of it going out of sync.
+
+### Tests
+
+- **CI workflow** — Added `.github/workflows/test.yml` that runs `dart format`, `dart analyze`, and `dart test` on every push and pull request so broken code can no longer be published directly.
+- **New unit tests** added:
+  - `Parser.parse` — missing file and invalid JSON both record a friendly error and throw.
+  - `Parser.buildContext` — throws `StateError` when schema validation fails.
+  - `Generator.renderTemplate` — throws a descriptive `StateError` when the template file is missing.
+  - `CommandRunner.checkAndAddDeps` — partial-dep case: only the missing packages are passed to `dart pub add`.
+  - `FeatureGen.generate` — error path: surfaces `"Unexpected error"` when the parser throws.
+  - `StringExtension.toCamelCase` — double-underscore regression test.
+  - `Config.fromJson` / `toMap` — new tests covering all three layers and the null-layer sentinel.
+  - `ContextMethod.hasUseCase` — getter correctness and `toMap` inclusion.
+
+### DX
+
+- **`--help` invocation corrected** — Help text now shows `feature_gen_cli <name> <schema.json>` (the correct post-`pub global activate` form) instead of the old `dart tool/feature_gen_cli.dart` path.
+- **`--version` typo fixed** — Removed the stray colon that appeared as `--version:` in the help output.
+- **Stricter lints enabled** — `analysis_options.yaml` now includes `prefer_final_locals`, `unawaited_futures`, `prefer_const_constructors`, and `avoid_print`.
+
 ## 1.4.3
 
 ### Features

@@ -20,19 +20,32 @@ class Parser {
   final CommandHelper _commandHelper;
 
   /// Reads and deserialises the JSON schema file at [path] into a [Schema].
+  ///
+  /// Calls [CommandHelper.error] (which exits in production) when the file is
+  /// missing or contains invalid JSON, so the user receives a clear message
+  /// rather than a raw stack trace.
   Schema parse(String path) {
     final file = File(path);
     if (!file.existsSync()) {
       _commandHelper.error('Schema file not found: $path');
+      // error() calls exit(1) in production; rethrow path for test doubles.
+      throw StateError('Schema file not found: $path');
     }
-    final json = jsonDecode(file.readAsStringSync());
-    return Schema.fromJson(json);
+
+    try {
+      final json = jsonDecode(file.readAsStringSync());
+      return Schema.fromJson(json as Map<String, dynamic>);
+    } on FormatException catch (e) {
+      _commandHelper.error('Invalid JSON in schema file "$path": ${e.message}');
+      throw StateError('Invalid JSON in schema file "$path": ${e.message}');
+    }
   }
 
   /// Builds a [Context] from a [featureName] and parsed [schema].
   ///
-  /// Returns an empty context if validation fails. The caller is expected to
-  /// halt or surface the error to the user.
+  /// Throws a [StateError] if validation fails — callers should not continue
+  /// after this. In production [CommandHelper.error] already exits the process
+  /// before the throw is reached; in tests the throw surfaces the failure.
   ///
   /// **Single-response mode**: response fields are collected into a nested tree
   /// with a root node matching the feature name (original behaviour).
@@ -45,17 +58,9 @@ class Parser {
     final projectName = await YamlHelper().getProjectName(workingDirectory: projectRoot);
 
     if (!validateSchema(schema)) {
-      return Context(
-        name: '',
-        nameLowerCase: '',
-        nameCamelCase: '',
-        isList: false,
-        fields: [],
-        methods: [],
-        generateUseCase: false,
-        projectRoot: projectRoot,
-        projectName: projectName,
-        config: Config(),
+      throw StateError(
+        'Schema validation failed for feature "$featureName". '
+        'See errors above for details.',
       );
     }
 
@@ -102,7 +107,7 @@ class Parser {
       generateUseCase: generateUseCase,
       projectRoot: projectRoot,
       projectName: projectName,
-      config: schema.config ?? Config(),
+      config: schema.config ?? const Config(),
       isMultiResponse: false,
       entities: [],
     );
@@ -165,7 +170,7 @@ class Parser {
       generateUseCase: generateUseCase,
       projectRoot: projectRoot,
       projectName: projectName,
-      config: schema.config ?? Config(),
+      config: schema.config ?? const Config(),
       isMultiResponse: true,
       entities: entities,
     );
@@ -252,7 +257,6 @@ class Parser {
       hasParams: paramsFields.isNotEmpty,
       hasBody: bodyFields.isNotEmpty,
       hasQuery: queryFields.isNotEmpty,
-      hasUseCase: paramsFields.isNotEmpty || bodyFields.isNotEmpty || queryFields.isNotEmpty,
       responseEntityName: responseEntityName,
       responseEntityNameLower: responseEntityNameLower,
       responseEntityCamelCase: responseEntityCamelCase,
@@ -309,9 +313,9 @@ class Parser {
           type = getDartType(value.first);
         }
         return ContextField(
-          name: camelCaseKey, 
-          type: "List<$type>", 
-          isList: true, 
+          name: camelCaseKey,
+          type: "List<$type>",
+          isList: true,
           isCustom: isCustom,
           jsonKey: originalKey,
           hasJsonKey: hasJsonKey,
@@ -320,8 +324,8 @@ class Parser {
 
       final type = getDartType(value);
       return ContextField(
-        name: camelCaseKey, 
-        type: type, 
+        name: camelCaseKey,
+        type: type,
         isList: type.contains('List'),
         jsonKey: originalKey,
         hasJsonKey: hasJsonKey,
@@ -334,7 +338,9 @@ class Parser {
   /// Validates that [schema] has the required sections and config.
   ///
   /// Requires `api`, `api.methods`, `response`, and `config`, with exactly one
-  /// of `config.bloc` or `config.riverpod` set to true.
+  /// presentation layer set in `config`. Validation errors are reported via
+  /// [CommandHelper.error] (exits in production) and the method returns `false`
+  /// so test doubles can observe failures without process termination.
   ///
   /// In multi-response mode, additionally checks that any method `response` key
   /// that is set corresponds to a declared response entity.
@@ -355,8 +361,11 @@ class Parser {
       _commandHelper.error('Schema is not valid. "config" is required.');
       return false;
     }
-    if (schema.config!.bloc == null && schema.config!.riverpod == null && schema.config!.getx == null) {
-      _commandHelper.error('Schema is not valid. "config.bloc", "config.riverpod", or "config.getx" is required.');
+    if (schema.config!.layer == null) {
+      _commandHelper.error(
+        'Schema is not valid. Exactly one of "config.bloc", "config.riverpod", '
+        'or "config.getx" must be set to true.',
+      );
       return false;
     }
 

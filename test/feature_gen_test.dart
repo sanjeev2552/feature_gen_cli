@@ -27,7 +27,7 @@ void main() {
         generateUseCase: false,
         projectRoot: '/tmp',
         projectName: 'sample_app',
-        config: Config(bloc: true, riverpod: false),
+        config: const Config(layer: PresentationLayer.bloc),
       );
 
       final fakeGenerator = FakeGenerator();
@@ -43,4 +43,50 @@ void main() {
       expect(fakeGenerator.lastOverwrite, isTrue);
     });
   });
+
+  group('FeatureGen.generate error handling', () {
+    test('surfaces error message when parser throws', () async {
+      final argParser = buildArgParser();
+      final results = argParser.parse(['feature', 'schema.json']);
+
+      final commandHelper = TestCommandHelper();
+
+      /// A parser that throws unconditionally to simulate an invalid schema.
+      final throwingParser = _ThrowingParser();
+
+      final featureGen = FeatureGen(
+        parser: throwingParser,
+        generator: FakeGenerator(),
+        commandRunner: FakeCommandRunner(),
+        commandHelper: commandHelper,
+      );
+
+      await featureGen.generate(results);
+
+      // The generic catch block in generate() should record the error message.
+      expect(commandHelper.errors, isNotEmpty);
+      expect(commandHelper.errors.first, contains('Unexpected error'));
+    });
+  });
+}
+
+/// A [Parser] that always throws to simulate a runtime failure.
+class _ThrowingParser extends FakeParser {
+  _ThrowingParser() : super(Schema(), _dummyContext());
+
+  static Context _dummyContext() => Context(
+        name: '',
+        nameLowerCase: '',
+        nameCamelCase: '',
+        isList: false,
+        fields: [],
+        methods: [],
+        generateUseCase: false,
+        projectRoot: '/tmp',
+        projectName: 'app',
+        config: const Config(),
+      );
+
+  @override
+  Schema parse(String path) => throw StateError('simulated parse failure');
 }

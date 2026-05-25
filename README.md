@@ -126,8 +126,10 @@ By default, the CLI only generates missing files and will not overwrite existing
 
 ## Troubleshooting
 
-- **Schema validation errors**: Ensure `config`, `api.methods`, and `response` exist, and that exactly one of `config.bloc`, `config.riverpod`, or `config.getx` is `true`.
-- **`build_runner` failed**: Re-run it manually: `dart run build_runner build -d`.
+- **Schema validation errors** — Ensure `config`, `api.methods`, and `response` exist, and that exactly one of `config.bloc`, `config.riverpod`, or `config.getx` is `true`. The CLI now prints a specific message for each validation failure.
+- **`Invalid JSON in schema file`** — The schema file contains a syntax error. Validate it with a JSON linter and retry.
+- **`Template not found`** — The package may be installed incorrectly. Re-run `dart pub global activate feature_gen_cli` to restore the template files.
+- **`build_runner` failed** — Re-run it manually: `dart run build_runner build -d`.
 
 ## Support ❤️
 
@@ -137,7 +139,10 @@ If you find this package helpful, please consider giving it a like on [pub.dev](
 
 - Install dependencies: `dart pub get`
 - Run tests: `dart test`
+- Run the analyzer: `dart analyze`
 - Format code: `dart format .`
+
+All three checks (`dart format`, `dart analyze`, `dart test`) run automatically on every push and pull request via the CI workflow.
 
 Note: The test suite is pure unit tests and avoids running external commands.
 

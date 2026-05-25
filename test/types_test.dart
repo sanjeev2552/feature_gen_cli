@@ -2,22 +2,6 @@ import 'package:feature_gen_cli/types.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Schema.responseParser', () {
-    test('unwraps list response', () {
-      final (response, isList) = Schema.responseParser([
-        {'id': 'int'}
-      ]);
-      expect(isList, isTrue);
-      expect(response['id'], 'int');
-    });
-
-    test('returns object response as-is', () {
-      final (response, isList) = Schema.responseParser({'id': 'int'});
-      expect(isList, isFalse);
-      expect(response['id'], 'int');
-    });
-  });
-
   group('Schema multi-response detection', () {
     test('detects multi-response when all values are objects', () {
       final schema = Schema.fromJson({
@@ -70,23 +54,88 @@ void main() {
     });
   });
 
-
-  group('Config validation', () {
-    test('throws when more than one toggle is true', () {
-      expect(() => Config(bloc: true, riverpod: true, getx: false), throwsArgumentError);
-      expect(() => Config(bloc: true, riverpod: false, getx: true), throwsArgumentError);
-      expect(() => Config(bloc: false, riverpod: true, getx: true), throwsArgumentError);
-      expect(() => Config(bloc: true, riverpod: true, getx: true), throwsArgumentError);
+  group('Config.fromJson', () {
+    test('parses bloc layer', () {
+      final config = Config.fromJson({'bloc': true, 'riverpod': false, 'getx': false});
+      expect(config.layer, PresentationLayer.bloc);
     });
 
-    test('throws when all toggles are false', () {
-      expect(() => Config(bloc: false, riverpod: false, getx: false), throwsArgumentError);
+    test('parses riverpod layer', () {
+      final config = Config.fromJson({'bloc': false, 'riverpod': true, 'getx': false});
+      expect(config.layer, PresentationLayer.riverpod);
+    });
+
+    test('parses getx layer', () {
+      final config = Config.fromJson({'bloc': false, 'riverpod': false, 'getx': true});
+      expect(config.layer, PresentationLayer.getx);
+    });
+
+    test('returns null layer when no flag is true', () {
+      final config = Config.fromJson({'bloc': false, 'riverpod': false, 'getx': false});
+      expect(config.layer, isNull);
+    });
+
+    test('toMap reflects the active layer as bool flags', () {
+      expect(
+        Config(layer: PresentationLayer.bloc).toMap(),
+        {'bloc': true, 'riverpod': false, 'getx': false},
+      );
+      expect(
+        Config(layer: PresentationLayer.riverpod).toMap(),
+        {'bloc': false, 'riverpod': true, 'getx': false},
+      );
+      expect(
+        Config(layer: PresentationLayer.getx).toMap(),
+        {'bloc': false, 'riverpod': false, 'getx': true},
+      );
+    });
+  });
+
+  group('ContextMethod.hasUseCase (computed getter)', () {
+    test('is true when method has params', () {
+      final method = ContextMethod(
+        methodName: 'getUser',
+        methodNamePascalCase: 'GetUser',
+        hasParams: true,
+        hasBody: false,
+        hasQuery: false,
+      );
+      expect(method.hasUseCase, isTrue);
+    });
+
+    test('is false when method has no inputs', () {
+      final method = ContextMethod(
+        methodName: 'getUser',
+        methodNamePascalCase: 'GetUser',
+        hasParams: false,
+        hasBody: false,
+        hasQuery: false,
+      );
+      expect(method.hasUseCase, isFalse);
+    });
+
+    test('is included in toMap()', () {
+      final method = ContextMethod(
+        methodName: 'getUser',
+        methodNamePascalCase: 'GetUser',
+        hasParams: true,
+        hasBody: false,
+        hasQuery: false,
+      );
+      expect(method.toMap()['hasUseCase'], isTrue);
     });
   });
 
   group('Context mapping', () {
     test('ContextField toMap', () {
-      final field = ContextField(name: 'id', type: 'int', isList: false, isCustom: false, jsonKey: 'id', hasJsonKey: false);
+      final field = ContextField(
+        name: 'id',
+        type: 'int',
+        isList: false,
+        isCustom: false,
+        jsonKey: 'id',
+        hasJsonKey: false,
+      );
       expect(field.toMap(), containsPair('name', 'id'));
       expect(field.toMap(), containsPair('type', 'int'));
       expect(field.toMap(), containsPair('jsonKey', 'id'));
@@ -100,7 +149,6 @@ void main() {
         hasParams: false,
         hasBody: false,
         hasQuery: false,
-        hasUseCase: false,
       );
       final map = method.toMap();
       expect(map['methodName'], 'getUser');
@@ -119,7 +167,7 @@ void main() {
         generateUseCase: false,
         projectRoot: '/tmp',
         projectName: 'sample',
-        config: Config(bloc: true, riverpod: false, getx: false),
+        config: Config(layer: PresentationLayer.bloc),
       );
       final map = context.toMap();
       expect(map['name'], 'User');

@@ -81,47 +81,42 @@ class Schema {
       isMultiResponse: isMultiResponse,
     );
   }
-
-  /// Unwraps array responses for single-response mode, returning inner element map and flag.
-  static (Map<String, dynamic>, bool) responseParser(dynamic response) {
-    if (response is List) {
-      return (response.first, true);
-    }
-    return (response, false);
-  }
 }
+
+/// The state-management framework to generate presentation-layer code for.
+enum PresentationLayer { bloc, riverpod, getx }
 
 /// Controls which presentation layer is generated.
 ///
-/// Exactly one of [bloc] or [riverpod] must be true when provided.
+/// Exactly one [PresentationLayer] must be active. Validation is enforced by
+/// [Parser.validateSchema] so deserialization failures produce friendly
+/// user-facing messages rather than constructor exceptions.
 class Config {
-  final bool? bloc;
-  final bool? riverpod;
-  final bool? getx;
+  /// The selected state-management layer.
+  ///
+  /// Null only when the JSON `config` block contains no recognised `true` flag;
+  /// such schemas are rejected by [Parser.validateSchema] before generation
+  /// proceeds.
+  final PresentationLayer? layer;
 
-  Config({this.bloc, this.riverpod, this.getx}) {
-    if (bloc == null && riverpod == null && getx == null) {
-      return;
-    }
-    // Only one of them should be true, handle it by converting true to 1 and false/null to 0
-    final sum = (bloc == true ? 1 : 0) + (riverpod == true ? 1 : 0) + (getx == true ? 1 : 0);
-    if (sum != 1) {
-      throw ArgumentError(
-        'Exactly one of "bloc", "riverpod", or "getx" must be true in the config section.',
-      );
-    }
-  }
+  const Config({this.layer});
 
   factory Config.fromJson(Map<String, dynamic> json) {
-    return Config(
-      bloc: json['bloc'] as bool?,
-      riverpod: json['riverpod'] as bool?,
-      getx: json['getx'] as bool?,
-    );
+    if (json['bloc'] == true) return const Config(layer: PresentationLayer.bloc);
+    if (json['riverpod'] == true) return const Config(layer: PresentationLayer.riverpod);
+    if (json['getx'] == true) return const Config(layer: PresentationLayer.getx);
+    // layer == null — will be caught by Parser.validateSchema.
+    return const Config();
   }
 
+  /// Returns the same `{'bloc', 'riverpod', 'getx'}` boolean map shape that
+  /// Mustache templates already depend on, so templates need no changes.
   Map<String, dynamic> toMap() {
-    return {'bloc': bloc, 'riverpod': riverpod, 'getx': getx};
+    return {
+      'bloc': layer == PresentationLayer.bloc,
+      'riverpod': layer == PresentationLayer.riverpod,
+      'getx': layer == PresentationLayer.getx,
+    };
   }
 }
 
@@ -231,10 +226,13 @@ class ContextMethod {
   final List<NestedContextField>? params;
   final List<NestedContextField>? body;
   final List<NestedContextField>? query;
-  final bool hasUseCase;
   final bool hasParams;
   final bool hasBody;
   final bool hasQuery;
+
+  /// Derived from [hasParams], [hasBody], and [hasQuery] — a method has a
+  /// use-case when it carries at least one input contract.
+  bool get hasUseCase => hasParams || hasBody || hasQuery;
 
   /// PascalCase entity name this method returns, e.g. `"User"` or `"Token"`.
   /// Null in single-response mode or when the method returns void.
@@ -261,7 +259,6 @@ class ContextMethod {
     required this.hasParams,
     required this.hasBody,
     required this.hasQuery,
-    required this.hasUseCase,
     this.responseEntityName,
     this.responseEntityNameLower,
     this.responseEntityCamelCase,

@@ -47,6 +47,29 @@ void main() {
 
       expect(outFile.readAsStringSync(), 'Hello New');
     });
+
+    test('throws StateError with descriptive message when template is missing', () {
+      final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+
+      final outFile = File('${tempDir.path}/output.dart');
+
+      expect(
+        () => Generator().renderTemplate(
+          '${tempDir.path}/nonexistent.mustache',
+          outFile.path,
+          {},
+          overwrite: true,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Template not found'),
+          ),
+        ),
+      );
+    });
   });
 
   group('Generator.generateFeature', () {
@@ -76,7 +99,7 @@ void main() {
       );
 
       expect(context.nameLowerCase, 'user');
-      expect(context.config.bloc, isTrue);
+      expect(context.config.layer, PresentationLayer.bloc);
 
       await Generator().generateFeature(context);
 

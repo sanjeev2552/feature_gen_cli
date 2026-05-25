@@ -27,9 +27,10 @@ class CommandRunner {
   final YamlHelper _yamlHelper;
   final CommandHelper _commandHelper;
 
-  /// Runs [executable] with [args] and forwards output. Returns the exit code.
+  /// Runs [executable] with [args] and forwards output to the appropriate stream.
   ///
-  /// Output is streamed to stdout/stderr so callers can surface actionable logs.
+  /// stdout output is written to [stdout]; stderr output is written to [stderr]
+  /// so callers (CI pipelines, IDEs) can distinguish errors from normal output.
   Future<int> _runCommand(String executable, List<String> args, {String? workingDirectory}) async {
     final result = await _processRunner(executable, args, workingDirectory: workingDirectory);
 
@@ -37,7 +38,7 @@ class CommandRunner {
       stdout.writeln(result.stdout);
     }
     if ((result.stderr as String).isNotEmpty) {
-      stdout.writeln(result.stderr);
+      stderr.writeln(result.stderr);
     }
 
     return result.exitCode;
@@ -47,17 +48,17 @@ class CommandRunner {
   ///
   /// Dependencies are added via `dart pub add` to keep the project in a valid
   /// state (it updates `pubspec.yaml` and runs `pub get`). This includes
-  /// packages needed for either bloc or riverpod generation.
+  /// packages needed for the configured [Config.layer].
   Future<void> checkAndAddDeps({required Config config, required String workingDirectory}) async {
     final requiredDependencies = [
       'get_it',
       'injectable',
-      if (config.bloc == true) ...['flutter_bloc', 'bloc'],
+      if (config.layer == PresentationLayer.bloc) ...['flutter_bloc', 'bloc'],
       'equatable',
       'freezed_annotation',
       'json_annotation',
-      if (config.riverpod == true) 'flutter_riverpod',
-      if (config.getx == true) 'get',
+      if (config.layer == PresentationLayer.riverpod) 'flutter_riverpod',
+      if (config.layer == PresentationLayer.getx) 'get',
     ];
     const requiredDevDependencies = [
       'build_runner',

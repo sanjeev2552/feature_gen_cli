@@ -21,6 +21,33 @@ void main() {
       expect(schema.config, isNotNull);
       expect(schema.response, isNotNull);
     });
+
+    test('reports error and throws on missing schema file', () {
+      final helper = TestCommandHelper();
+      final parser = Parser(commandHelper: helper);
+
+      expect(
+        () => parser.parse('/nonexistent/path/schema.json'),
+        throwsA(isA<StateError>()),
+      );
+      expect(helper.errors, isNotEmpty);
+    });
+
+    test('reports error and throws on invalid JSON', () {
+      final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+
+      final file = File('${tempDir.path}/bad.json')
+        ..writeAsStringSync('{ this is not valid json }');
+      final helper = TestCommandHelper();
+      final parser = Parser(commandHelper: helper);
+
+      expect(
+        () => parser.parse(file.path),
+        throwsA(isA<StateError>()),
+      );
+      expect(helper.errors.first, contains('Invalid JSON'));
+    });
   });
 
   group('Parser.validateSchema', () {
@@ -28,27 +55,53 @@ void main() {
       final helper = TestCommandHelper();
       final parser = Parser(commandHelper: helper);
 
-      final schema = Schema(response: {}, config: Config(bloc: true, riverpod: false));
+      final schema = Schema(
+        response: {},
+        config: Config(layer: PresentationLayer.bloc),
+      );
       final ok = parser.validateSchema(schema);
 
       expect(ok, isFalse);
       expect(helper.errors, isNotEmpty);
     });
 
-    test('returns false and reports missing config', () {
+    test('returns false and reports missing config layer', () {
       final helper = TestCommandHelper();
       final parser = Parser(commandHelper: helper);
 
-      final schema = Schema(api: Api(methods: Methods(method: {})), response: {}, config: Config(bloc: null, riverpod: null, getx: null));
+      // Config with no layer set — simulates all flags false in JSON.
+      final schema = Schema(
+        api: Api(methods: Methods(method: {})),
+        response: {},
+        config: const Config(),
+      );
       final ok = parser.validateSchema(schema);
 
       expect(ok, isFalse);
-      expect(helper.errors, isNotEmpty);
-      expect(helper.errors.first, contains('config.bloc", "config.riverpod", or "config.getx" is required.'));
+      expect(helper.errors.first, contains('config.bloc'));
     });
   });
 
   group('Parser.buildContext', () {
+    test('throws StateError when schema validation fails', () async {
+      final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+      writePubspec(tempDir, name: 'sample_app');
+
+      final previous = Directory.current;
+      Directory.current = tempDir.path;
+      addTearDown(() => Directory.current = previous);
+
+      final parser = Parser(commandHelper: TestCommandHelper());
+      // Schema missing api → fails validation.
+      final badSchema = Schema(response: {}, config: const Config());
+
+      await expectLater(
+        parser.buildContext('user', badSchema),
+        throwsA(isA<StateError>()),
+      );
+    });
+
     test('builds context with correct naming and usecase flags', () async {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
       addTearDown(() => tempDir.deleteSync(recursive: true));
@@ -180,4 +233,3 @@ void main() {
     });
   });
 }
-

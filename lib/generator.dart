@@ -10,8 +10,8 @@ import 'package:mustache_template/mustache.dart';
 ///
 /// The generator is file-system focused and deliberately avoids business logic.
 /// It expects a fully prepared [Context] and respects the configured
-/// presentation layer (bloc or riverpod). Existing generated files are
-/// overwritten when the same paths are produced.
+/// presentation layer (bloc, riverpod, or getx). Existing generated files are
+/// overwritten when the same paths are produced and [overwrite] is true.
 class Generator {
   /// Creates directories and generates all boilerplate files for the feature.
   Future<void> generateFeature(Context context, {bool overwrite = false}) async {
@@ -35,11 +35,10 @@ class Generator {
       '$basePath/domain/entities',
       '$basePath/domain/repositories',
       if (generateUseCase) '$basePath/domain/usecases',
-      if (context.config.bloc == true) '$basePath/presentation/bloc',
-      if (context.config.riverpod == true) '$basePath/presentation/riverpod',
-      if (context.config.getx == true) '$basePath/presentation/getx',
-      if (context.config.bloc == true || context.config.riverpod == true || context.config.getx == true)
-        '$basePath/presentation/screen',
+      if (context.config.layer == PresentationLayer.bloc) '$basePath/presentation/bloc',
+      if (context.config.layer == PresentationLayer.riverpod) '$basePath/presentation/riverpod',
+      if (context.config.layer == PresentationLayer.getx) '$basePath/presentation/getx',
+      if (context.config.layer != null) '$basePath/presentation/screen',
     ];
 
     if (generateUseCase) {
@@ -62,11 +61,11 @@ class Generator {
     );
   }
 
-  /// Renders all Mustache templates (model, entity, repository, datasource,
-  /// usecase, bloc/event/state, or riverpod notifier) into the feature directory.
+  /// Renders all Mustache templates into the feature directory.
   ///
-  /// Each template receives a simple map to keep the generator decoupled
-  /// from the Mustache engine.
+  /// Delegates per-layer presentation files to focused private helpers so each
+  /// layer's templates are managed in one place, making it straightforward to
+  /// add new layers without touching unrelated code.
   void generateBoilerplate({
     required String featureName,
     required String basePath,
@@ -81,19 +80,10 @@ class Generator {
     final responseEntities = _buildResponseEntities(context);
 
     // Common enriched methods map (adds methodNameLowerCase + response fields).
-    List<Map<String, dynamic>> enrichedMethods(List<ContextMethod> methods) {
-      return methods
-          .map(
-            (e) => {
-              ...e.toMap(),
-              'methodNameLowerCase': e.methodName.camelCaseToSnakeCase(),
-            },
-          )
-          .toList();
-    }
+    final enriched = _enrichedMethods(context.methods);
 
     // Root context additions shared across templates.
-    Map<String, dynamic> baseCtx() => {
+    final baseCtx = {
       ...context.toMap(),
       'featureNameLower': featureName,
       'responseEntities': responseEntities,
@@ -155,8 +145,8 @@ class Generator {
       '$templateBasePath/domain/repository.mustache',
       '$basePath/domain/repositories/${featureName}_repository.dart',
       {
-        ...baseCtx(),
-        'methods': enrichedMethods(context.methods),
+        ...baseCtx,
+        'methods': enriched,
       },
       overwrite: overwrite,
     );
@@ -166,8 +156,8 @@ class Generator {
       '$templateBasePath/data/repository_impl.mustache',
       '$basePath/data/repositories/${featureName}_repository_impl.dart',
       {
-        ...baseCtx(),
-        'methods': enrichedMethods(context.methods),
+        ...baseCtx,
+        'methods': enriched,
       },
       overwrite: overwrite,
     );
@@ -177,8 +167,8 @@ class Generator {
       '$templateBasePath/data/remote_datasource.mustache',
       '$basePath/data/datasources/${featureName}_remote_datasource.dart',
       {
-        ...baseCtx(),
-        'methods': enrichedMethods(context.methods),
+        ...baseCtx,
+        'methods': enriched,
       },
       overwrite: overwrite,
     );
@@ -210,120 +200,185 @@ class Generator {
       }
     }
 
-    // ── Presentation — Bloc ───────────────────────────────────────────────
-    if (context.config.bloc == true) {
-      renderTemplate(
-        '$templateBasePath/presentation/bloc/bloc.mustache',
-        '$basePath/presentation/bloc/${featureName}_bloc.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/bloc/event.mustache',
-        '$basePath/presentation/bloc/${featureName}_event.dart',
-        {
-          'name': context.name,
-          'projectName': context.projectName,
-          'methods': enrichedMethods(context.methods).map((e) => {
-            ...e,
-            'nameLowerCase': context.nameLowerCase,
-          }).toList(),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/state.mustache',
-        '$basePath/presentation/bloc/${featureName}_state.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/screen/screen_bloc.mustache',
-        '$basePath/presentation/screen/${featureName}_screen.dart',
-        context.toMap(),
-        overwrite: overwrite,
-      );
-    }
-
-    // ── Presentation — Riverpod ───────────────────────────────────────────
-    if (context.config.riverpod == true) {
-      renderTemplate(
-        '$templateBasePath/presentation/state.mustache',
-        '$basePath/presentation/riverpod/${featureName}_state.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/riverpod/notifier.mustache',
-        '$basePath/presentation/riverpod/${featureName}_notifier.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/screen/screen_riverpod.mustache',
-        '$basePath/presentation/screen/${featureName}_screen.dart',
-        context.toMap(),
-        overwrite: overwrite,
-      );
-    }
-
-    // ── Presentation — GetX ───────────────────────────────────────────
-    if (context.config.getx == true) {
-      renderTemplate(
-        '$templateBasePath/presentation/state.mustache',
-        '$basePath/presentation/getx/${featureName}_state.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/getx/controller.mustache',
-        '$basePath/presentation/getx/${featureName}_controller.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/getx/binding.mustache',
-        '$basePath/presentation/getx/${featureName}_binding.dart',
-        {
-          ...baseCtx(),
-          'methods': enrichedMethods(context.methods),
-        },
-        overwrite: overwrite,
-      );
-
-      renderTemplate(
-        '$templateBasePath/presentation/screen/screen_getx.mustache',
-        '$basePath/presentation/screen/${featureName}_screen.dart',
-        context.toMap(),
-        overwrite: overwrite,
-      );
+    // ── Presentation layer ────────────────────────────────────────────────
+    switch (context.config.layer) {
+      case PresentationLayer.bloc:
+        _generateBlocFiles(
+          featureName: featureName,
+          basePath: basePath,
+          templateBasePath: templateBasePath,
+          context: context,
+          enriched: enriched,
+          baseCtx: baseCtx,
+          overwrite: overwrite,
+        );
+      case PresentationLayer.riverpod:
+        _generateRiverpodFiles(
+          featureName: featureName,
+          basePath: basePath,
+          templateBasePath: templateBasePath,
+          context: context,
+          enriched: enriched,
+          baseCtx: baseCtx,
+          overwrite: overwrite,
+        );
+      case PresentationLayer.getx:
+        _generateGetXFiles(
+          featureName: featureName,
+          basePath: basePath,
+          templateBasePath: templateBasePath,
+          context: context,
+          enriched: enriched,
+          baseCtx: baseCtx,
+          overwrite: overwrite,
+        );
+      case null:
+        // Unreachable after validateSchema; here for exhaustive switch safety.
+        break;
     }
   }
+
+  // ── Per-layer helpers ─────────────────────────────────────────────────────
+
+  /// Generates BLoC, Event, State, and Screen files for the [PresentationLayer.bloc] layer.
+  void _generateBlocFiles({
+    required String featureName,
+    required String basePath,
+    required String templateBasePath,
+    required Context context,
+    required List<Map<String, dynamic>> enriched,
+    required Map<String, dynamic> baseCtx,
+    required bool overwrite,
+  }) {
+    renderTemplate(
+      '$templateBasePath/presentation/bloc/bloc.mustache',
+      '$basePath/presentation/bloc/${featureName}_bloc.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/bloc/event.mustache',
+      '$basePath/presentation/bloc/${featureName}_event.dart',
+      {
+        'name': context.name,
+        'projectName': context.projectName,
+        'methods': enriched.map((e) => {
+          ...e,
+          'nameLowerCase': context.nameLowerCase,
+        }).toList(),
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/state.mustache',
+      '$basePath/presentation/bloc/${featureName}_state.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/screen/screen_bloc.mustache',
+      '$basePath/presentation/screen/${featureName}_screen.dart',
+      context.toMap(),
+      overwrite: overwrite,
+    );
+  }
+
+  /// Generates State, Notifier, and Screen files for the [PresentationLayer.riverpod] layer.
+  void _generateRiverpodFiles({
+    required String featureName,
+    required String basePath,
+    required String templateBasePath,
+    required Context context,
+    required List<Map<String, dynamic>> enriched,
+    required Map<String, dynamic> baseCtx,
+    required bool overwrite,
+  }) {
+    renderTemplate(
+      '$templateBasePath/presentation/state.mustache',
+      '$basePath/presentation/riverpod/${featureName}_state.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/riverpod/notifier.mustache',
+      '$basePath/presentation/riverpod/${featureName}_notifier.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/screen/screen_riverpod.mustache',
+      '$basePath/presentation/screen/${featureName}_screen.dart',
+      context.toMap(),
+      overwrite: overwrite,
+    );
+  }
+
+  /// Generates State, Controller, Binding, and Screen files for the [PresentationLayer.getx] layer.
+  void _generateGetXFiles({
+    required String featureName,
+    required String basePath,
+    required String templateBasePath,
+    required Context context,
+    required List<Map<String, dynamic>> enriched,
+    required Map<String, dynamic> baseCtx,
+    required bool overwrite,
+  }) {
+    renderTemplate(
+      '$templateBasePath/presentation/state.mustache',
+      '$basePath/presentation/getx/${featureName}_state.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/getx/controller.mustache',
+      '$basePath/presentation/getx/${featureName}_controller.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/getx/binding.mustache',
+      '$basePath/presentation/getx/${featureName}_binding.dart',
+      {
+        ...baseCtx,
+        'methods': enriched,
+      },
+      overwrite: overwrite,
+    );
+
+    renderTemplate(
+      '$templateBasePath/presentation/screen/screen_getx.mustache',
+      '$basePath/presentation/screen/${featureName}_screen.dart',
+      context.toMap(),
+      overwrite: overwrite,
+    );
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
 
   /// Builds a deduplicated list of `{name, nameLower}` maps for every distinct
   /// entity the methods return.
@@ -344,10 +399,24 @@ class Generator {
         .toList();
   }
 
+  /// Returns a copy of [methods] enriched with `methodNameLowerCase` for template use.
+  List<Map<String, dynamic>> _enrichedMethods(List<ContextMethod> methods) {
+    return methods
+        .map(
+          (e) => {
+            ...e.toMap(),
+            'methodNameLowerCase': e.methodName.camelCaseToSnakeCase(),
+          },
+        )
+        .toList();
+  }
+
   /// Reads a `.mustache` template, injects [context] values, and writes to [outPath]
-  /// only if it does not already exist.
+  /// only if it does not already exist (or when [overwrite] is true).
   ///
   /// This is intentionally synchronous to keep file creation predictable.
+  /// Throws a descriptive [StateError] when the template file cannot be found,
+  /// so a corrupt or incomplete install produces a clear message.
   void renderTemplate(
     String templatePath,
     String outPath,
@@ -358,7 +427,17 @@ class Generator {
     if (!overwrite && outFile.existsSync()) {
       return;
     }
-    final templateString = File(templatePath).readAsStringSync();
+
+    final String templateString;
+    try {
+      templateString = File(templatePath).readAsStringSync();
+    } on FileSystemException catch (e) {
+      throw StateError(
+        'Template not found at "$templatePath". '
+        'Is the package correctly installed?\n  $e',
+      );
+    }
+
     final template = Template(templateString);
     final result = template.renderString(context);
     outFile.writeAsStringSync(result);

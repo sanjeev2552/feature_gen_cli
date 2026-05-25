@@ -12,11 +12,17 @@ extension StringExtension on String {
   }
 
   /// Converts `snake_case` → `camelCase`.
+  ///
+  /// Empty segments (produced by consecutive underscores) are skipped safely,
+  /// consistent with the guard in [toPascalCase].
   String toCamelCase() {
     final words = split('_');
 
     return words.first.toLowerCase() +
-        words.skip(1).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join();
+        words
+            .skip(1)
+            .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
+            .join();
   }
 
   /// Normalises to strict lower `snake_case`.
