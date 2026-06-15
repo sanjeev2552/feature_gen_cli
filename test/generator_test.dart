@@ -9,6 +9,9 @@ import 'support/test_fakes.dart';
 import 'support/test_fixtures.dart';
 
 void main() {
+  Generator testGenerator() =>
+      Generator(templateBasePath: '${Directory.current.path}/lib/template');
+
   group('Generator.renderTemplate', () {
     test('does not overwrite existing files by default', () {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
@@ -16,7 +19,8 @@ void main() {
 
       final templateFile = File('${tempDir.path}/template.mustache')
         ..writeAsStringSync('Hello {{name}}');
-      final outFile = File('${tempDir.path}/output.dart')..writeAsStringSync('Existing content');
+      final outFile = File('${tempDir.path}/output.dart')
+        ..writeAsStringSync('Existing content');
 
       Generator().renderTemplate(templateFile.path, outFile.path, {
         'name': 'New',
@@ -31,31 +35,43 @@ void main() {
 
       final templateFile = File('${tempDir.path}/template.mustache')
         ..writeAsStringSync('Hello {{name}}');
-      final outFile = File('${tempDir.path}/output.dart')..writeAsStringSync('Existing content');
+      final outFile = File('${tempDir.path}/output.dart')
+        ..writeAsStringSync('Existing content');
 
-      Generator().renderTemplate(templateFile.path, outFile.path, {'name': 'New'}, overwrite: true);
+      Generator().renderTemplate(templateFile.path, outFile.path, {
+        'name': 'New',
+      }, overwrite: true);
 
       expect(outFile.readAsStringSync(), 'Hello New');
     });
 
-    test('throws StateError with descriptive message when template is missing', () {
-      final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
-      addTearDown(() => tempDir.deleteSync(recursive: true));
+    test(
+      'throws StateError with descriptive message when template is missing',
+      () {
+        final tempDir = Directory.systemTemp.createTempSync(
+          'feature_gen_test_',
+        );
+        addTearDown(() => tempDir.deleteSync(recursive: true));
 
-      final outFile = File('${tempDir.path}/output.dart');
+        final outFile = File('${tempDir.path}/output.dart');
 
-      expect(
-        () => Generator().renderTemplate(
-          '${tempDir.path}/nonexistent.mustache',
-          outFile.path,
-          {},
-          overwrite: true,
-        ),
-        throwsA(
-          isA<StateError>().having((e) => e.message, 'message', contains('Template not found')),
-        ),
-      );
-    });
+        expect(
+          () => Generator().renderTemplate(
+            '${tempDir.path}/nonexistent.mustache',
+            outFile.path,
+            {},
+            overwrite: true,
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('Template not found'),
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('Generator.generateFeature', () {
@@ -65,11 +81,10 @@ void main() {
       required String featureName,
     }) async {
       writePubspec(projectDir, name: 'sample_app');
-      final previous = Directory.current;
-      Directory.current = projectDir.path;
-      addTearDown(() => Directory.current = previous);
-
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: projectDir.path,
+      );
       final schema = Schema.fromJson(schemaJson);
       return parser.buildContext(featureName, schema);
     }
@@ -87,14 +102,29 @@ void main() {
       expect(context.nameLowerCase, 'user');
       expect(context.config.layer, PresentationLayer.bloc);
 
-      await Generator().generateFeature(context);
+      await testGenerator().generateFeature(context);
 
       final base = '${tempDir.path}/lib/features/${context.nameLowerCase}';
-      expect(File('$base/presentation/bloc/user_bloc.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/bloc/user_event.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/bloc/user_state.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/riverpod/user_notifier.dart').existsSync(), isFalse);
-      expect(File('$base/presentation/screen/user_screen.dart').existsSync(), isTrue);
+      expect(
+        File('$base/presentation/bloc/user_bloc.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/bloc/user_event.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/bloc/user_state.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/riverpod/user_notifier.dart').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$base/presentation/screen/user_screen.dart').existsSync(),
+        isTrue,
+      );
 
       final usecasePath = '$base/domain/usecases/update_user_usecase.dart';
       expect(File(usecasePath).existsSync(), isTrue);
@@ -117,12 +147,21 @@ void main() {
         featureName: 'user',
       );
 
-      await Generator().generateFeature(context);
+      await testGenerator().generateFeature(context);
 
       final base = '${tempDir.path}/lib/features/user';
-      expect(File('$base/presentation/riverpod/user_notifier.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/bloc/user_bloc.dart').existsSync(), isFalse);
-      expect(File('$base/presentation/screen/user_screen.dart').existsSync(), isTrue);
+      expect(
+        File('$base/presentation/riverpod/user_notifier.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/bloc/user_bloc.dart').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$base/presentation/screen/user_screen.dart').existsSync(),
+        isTrue,
+      );
     });
 
     test('generates GetX files and skips BLoC and Riverpod files', () async {
@@ -135,15 +174,33 @@ void main() {
         featureName: 'user',
       );
 
-      await Generator().generateFeature(context);
+      await testGenerator().generateFeature(context);
 
       final base = '${tempDir.path}/lib/features/user';
-      expect(File('$base/presentation/getx/user_controller.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/getx/user_binding.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/getx/user_state.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/screen/user_screen.dart').existsSync(), isTrue);
-      expect(File('$base/presentation/bloc/user_bloc.dart').existsSync(), isFalse);
-      expect(File('$base/presentation/riverpod/user_notifier.dart').existsSync(), isFalse);
+      expect(
+        File('$base/presentation/getx/user_controller.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/getx/user_binding.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/getx/user_state.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/screen/user_screen.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$base/presentation/bloc/user_bloc.dart').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$base/presentation/riverpod/user_notifier.dart').existsSync(),
+        isFalse,
+      );
     });
 
     test('uses NoParams when method has no params/body/query', () async {
@@ -156,7 +213,7 @@ void main() {
         featureName: 'user',
       );
 
-      await Generator().generateFeature(context);
+      await testGenerator().generateFeature(context);
 
       final base = '${tempDir.path}/lib/features/${context.nameLowerCase}';
       final usecasePath = '$base/domain/usecases/get_user_usecase.dart';

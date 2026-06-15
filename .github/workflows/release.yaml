@@ -16,7 +16,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          # Strip the leading 'v' from the tag (v1.5.0 → 1.5.0)
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Extract lines between '## <version>' and the next '## ' heading
+          awk "/^## ${VERSION}$/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md > release_notes.md
+          echo "Extracted release notes for $VERSION:"
+          cat release_notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: release_notes.md

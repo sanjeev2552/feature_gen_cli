@@ -13,19 +13,25 @@ import 'package:mustache_template/mustache.dart';
 /// presentation layer (bloc, riverpod, or getx). Existing generated files are
 /// overwritten when the same paths are produced and [overwrite] is true.
 class Generator {
+  /// Creates a generator.
+  ///
+  /// [templateBasePath] is primarily a test seam. Production usage leaves it
+  /// null so templates are resolved from the installed package.
+  Generator({String? templateBasePath}) : _templateBasePath = templateBasePath;
+
+  final String? _templateBasePath;
+
   /// Creates directories and generates all boilerplate files for the feature.
-  Future<void> generateFeature(Context context, {bool overwrite = false}) async {
+  Future<void> generateFeature(
+    Context context, {
+    bool overwrite = false,
+  }) async {
     final featureName = context.nameLowerCase;
     final basePath = '${context.projectRoot}/lib/features/$featureName';
     final generateUseCase = context.generateUseCase;
 
-    // Resolve templates from within the feature_gen_cli package itself.
-    final packageUri = Uri.parse('package:feature_gen_cli/');
-    final libUri = await Isolate.resolvePackageUri(packageUri);
-    if (libUri == null) {
-      throw StateError('Could not resolve package:feature_gen_cli - is the package activated?');
-    }
-    final templateBasePath = libUri.resolve('template').toFilePath();
+    final templateBasePath =
+        _templateBasePath ?? await _resolveTemplateBasePath();
 
     // Create feature folders in a conventional clean-architecture layout.
     final folders = [
@@ -35,9 +41,12 @@ class Generator {
       '$basePath/domain/entities',
       '$basePath/domain/repositories',
       if (generateUseCase) '$basePath/domain/usecases',
-      if (context.config.layer == PresentationLayer.bloc) '$basePath/presentation/bloc',
-      if (context.config.layer == PresentationLayer.riverpod) '$basePath/presentation/riverpod',
-      if (context.config.layer == PresentationLayer.getx) '$basePath/presentation/getx',
+      if (context.config.layer == PresentationLayer.bloc)
+        '$basePath/presentation/bloc',
+      if (context.config.layer == PresentationLayer.riverpod)
+        '$basePath/presentation/riverpod',
+      if (context.config.layer == PresentationLayer.getx)
+        '$basePath/presentation/getx',
       if (context.config.layer != null) '$basePath/presentation/screen',
     ];
 
@@ -59,6 +68,18 @@ class Generator {
       context: context,
       overwrite: overwrite,
     );
+  }
+
+  Future<String> _resolveTemplateBasePath() async {
+    // Resolve templates from within the feature_gen_cli package itself.
+    final packageUri = Uri.parse('package:feature_gen_cli/');
+    final libUri = await Isolate.resolvePackageUri(packageUri);
+    if (libUri == null) {
+      throw StateError(
+        'Could not resolve package:feature_gen_cli - is the package activated?',
+      );
+    }
+    return libUri.resolve('template').toFilePath();
   }
 
   /// Renders all Mustache templates into the feature directory.
@@ -251,7 +272,9 @@ class Generator {
       {
         'name': context.name,
         'projectName': context.projectName,
-        'methods': enriched.map((e) => {...e, 'nameLowerCase': context.nameLowerCase}).toList(),
+        'methods': enriched
+            .map((e) => {...e, 'nameLowerCase': context.nameLowerCase})
+            .toList(),
       },
       overwrite: overwrite,
     );
@@ -358,13 +381,20 @@ class Generator {
     }
 
     // Return all entities (they are already unique by construction).
-    return context.entities.map((e) => {'name': e.name, 'nameLower': e.nameLower}).toList();
+    return context.entities
+        .map((e) => {'name': e.name, 'nameLower': e.nameLower})
+        .toList();
   }
 
   /// Returns a copy of [methods] enriched with `methodNameLowerCase` for template use.
   List<Map<String, dynamic>> _enrichedMethods(List<ContextMethod> methods) {
     return methods
-        .map((e) => {...e.toMap(), 'methodNameLowerCase': e.methodName.camelCaseToSnakeCase()})
+        .map(
+          (e) => {
+            ...e.toMap(),
+            'methodNameLowerCase': e.methodName.camelCaseToSnakeCase(),
+          },
+        )
         .toList();
   }
 

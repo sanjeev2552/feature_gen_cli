@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.5.1
+
+### Bug Fixes
+
+- **Multiple presentation layers rejected** — Schemas that set more than one of `config.bloc`, `config.riverpod`, or `config.getx` to `true` now fail validation with a clear error instead of silently choosing the first matching layer.
+- **JSON-decoded method maps normalized** — `ApiMethod.fromJson` now converts `params`, `body`, and `query` values with `Map<String, dynamic>.from(...)`, making parsed JSON maps safe to use throughout generation.
+
+### DX
+
+- **Test-friendly project roots** — `Parser` now accepts an injectable project root so tests can resolve `pubspec.yaml` without mutating `Directory.current`.
+- **Test-friendly template resolution** — `Generator` now accepts an injectable template base path, allowing generation tests to use local templates directly while production usage still resolves templates from the activated package.
+
+### CI
+
+- **Release notes from changelog** — The release workflow now extracts the current version's `CHANGELOG.md` section and uses it as the GitHub release body.
+
 ## 1.5.0
 
 ### Bug Fixes

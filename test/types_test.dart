@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:feature_gen_cli/types.dart';
 import 'package:test/test.dart';
 
@@ -27,17 +29,20 @@ void main() {
       expect(schema.response, isNotNull);
     });
 
-    test('treats list-wrapped response as single-response with isList=true', () {
-      final schema = Schema.fromJson({
-        'config': {'bloc': true, 'riverpod': false},
-        'api': {'methods': {}},
-        'response': [
-          {'id': 'int'},
-        ],
-      });
-      expect(schema.isMultiResponse, isFalse);
-      expect(schema.isList, isTrue);
-    });
+    test(
+      'treats list-wrapped response as single-response with isList=true',
+      () {
+        final schema = Schema.fromJson({
+          'config': {'bloc': true, 'riverpod': false},
+          'api': {'methods': {}},
+          'response': [
+            {'id': 'int'},
+          ],
+        });
+        expect(schema.isMultiResponse, isFalse);
+        expect(schema.isList, isTrue);
+      },
+    );
 
     test('ApiMethod parses response key as string', () {
       final method = ApiMethod.fromJson({'response': 'user'});
@@ -52,27 +57,71 @@ void main() {
       expect(method.response, 'user');
       expect(method.responseIsList, isTrue);
     });
+
+    test('ApiMethod safely converts params body and query maps', () {
+      final json =
+          jsonDecode('''
+        {
+          "params": { "id": "int" },
+          "body": { "name": "string" },
+          "query": { "page": "int" }
+        }
+      ''')
+              as Map<String, dynamic>;
+      final method = ApiMethod.fromJson(json);
+
+      expect(method.params, {'id': 'int'});
+      expect(method.body, {'name': 'string'});
+      expect(method.query, {'page': 'int'});
+    });
   });
 
   group('Config.fromJson', () {
     test('parses bloc layer', () {
-      final config = Config.fromJson({'bloc': true, 'riverpod': false, 'getx': false});
+      final config = Config.fromJson({
+        'bloc': true,
+        'riverpod': false,
+        'getx': false,
+      });
       expect(config.layer, PresentationLayer.bloc);
     });
 
     test('parses riverpod layer', () {
-      final config = Config.fromJson({'bloc': false, 'riverpod': true, 'getx': false});
+      final config = Config.fromJson({
+        'bloc': false,
+        'riverpod': true,
+        'getx': false,
+      });
       expect(config.layer, PresentationLayer.riverpod);
     });
 
     test('parses getx layer', () {
-      final config = Config.fromJson({'bloc': false, 'riverpod': false, 'getx': true});
+      final config = Config.fromJson({
+        'bloc': false,
+        'riverpod': false,
+        'getx': true,
+      });
       expect(config.layer, PresentationLayer.getx);
     });
 
     test('returns null layer when no flag is true', () {
-      final config = Config.fromJson({'bloc': false, 'riverpod': false, 'getx': false});
+      final config = Config.fromJson({
+        'bloc': false,
+        'riverpod': false,
+        'getx': false,
+      });
       expect(config.layer, isNull);
+      expect(config.hasMultipleLayers, isFalse);
+    });
+
+    test('marks config invalid when multiple layers are true', () {
+      final config = Config.fromJson({
+        'bloc': true,
+        'riverpod': false,
+        'getx': true,
+      });
+      expect(config.layer, isNull);
+      expect(config.hasMultipleLayers, isTrue);
     });
 
     test('toMap reflects the active layer as bool flags', () {
@@ -165,7 +214,9 @@ void main() {
         nameLowerCase: 'user',
         nameCamelCase: 'user',
         isList: false,
-        fields: [NestedContextField(name: 'User', properties: [], isRoot: true)],
+        fields: [
+          NestedContextField(name: 'User', properties: [], isRoot: true),
+        ],
         methods: [],
         generateUseCase: false,
         projectRoot: '/tmp',

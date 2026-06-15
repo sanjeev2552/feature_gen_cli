@@ -26,7 +26,10 @@ void main() {
       final helper = TestCommandHelper();
       final parser = Parser(commandHelper: helper);
 
-      expect(() => parser.parse('/nonexistent/path/schema.json'), throwsA(isA<StateError>()));
+      expect(
+        () => parser.parse('/nonexistent/path/schema.json'),
+        throwsA(isA<StateError>()),
+      );
       expect(helper.errors, isNotEmpty);
     });
 
@@ -74,6 +77,36 @@ void main() {
       expect(ok, isFalse);
       expect(helper.errors.first, contains('config.bloc'));
     });
+
+    test('returns false and reports multiple config layers', () {
+      final helper = TestCommandHelper();
+      final parser = Parser(commandHelper: helper);
+
+      final schema = Schema.fromJson({
+        'api': {'methods': <String, dynamic>{}},
+        'response': {'id': 'int'},
+        'config': {'bloc': true, 'riverpod': false, 'getx': true},
+      });
+      final ok = parser.validateSchema(schema);
+
+      expect(ok, isFalse);
+      expect(helper.errors.first, contains('Exactly one'));
+    });
+
+    test('returns true when exactly one config layer is selected', () {
+      final helper = TestCommandHelper();
+      final parser = Parser(commandHelper: helper);
+
+      final schema = Schema.fromJson({
+        'api': {'methods': <String, dynamic>{}},
+        'response': {'id': 'int'},
+        'config': {'bloc': false, 'riverpod': true, 'getx': false},
+      });
+      final ok = parser.validateSchema(schema);
+
+      expect(ok, isTrue);
+      expect(helper.errors, isEmpty);
+    });
   });
 
   group('Parser.buildContext', () {
@@ -82,15 +115,17 @@ void main() {
       addTearDown(() => tempDir.deleteSync(recursive: true));
       writePubspec(tempDir, name: 'sample_app');
 
-      final previous = Directory.current;
-      Directory.current = tempDir.path;
-      addTearDown(() => Directory.current = previous);
-
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       // Schema missing api → fails validation.
       final badSchema = Schema(response: {}, config: const Config());
 
-      await expectLater(parser.buildContext('user', badSchema), throwsA(isA<StateError>()));
+      await expectLater(
+        parser.buildContext('user', badSchema),
+        throwsA(isA<StateError>()),
+      );
     });
 
     test('builds context with correct naming and usecase flags', () async {
@@ -98,11 +133,10 @@ void main() {
       addTearDown(() => tempDir.deleteSync(recursive: true));
       writePubspec(tempDir, name: 'sample_app');
 
-      final previous = Directory.current;
-      Directory.current = tempDir.path;
-      addTearDown(() => Directory.current = previous);
-
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(blocSchema());
       final context = await parser.buildContext('user_profile', schema);
 
@@ -111,7 +145,13 @@ void main() {
       expect(context.nameCamelCase, 'userProfile');
       expect(context.projectName, 'sample_app');
       expect(context.generateUseCase, isTrue);
-      expect(context.methods.where((m) => m.methodName == 'updateUser').single.hasUseCase, isTrue);
+      expect(
+        context.methods
+            .where((m) => m.methodName == 'updateUser')
+            .single
+            .hasUseCase,
+        isTrue,
+      );
     });
 
     test('marks list response at root', () async {
@@ -119,11 +159,10 @@ void main() {
       addTearDown(() => tempDir.deleteSync(recursive: true));
       writePubspec(tempDir, name: 'sample_app');
 
-      final previous = Directory.current;
-      Directory.current = tempDir.path;
-      addTearDown(() => Directory.current = previous);
-
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(listResponseSchema());
       final context = await parser.buildContext('users', schema);
 
@@ -135,14 +174,15 @@ void main() {
       addTearDown(() => tempDir.deleteSync(recursive: true));
       writePubspec(tempDir, name: 'sample_app');
 
-      final previous = Directory.current;
-      Directory.current = tempDir.path;
-      addTearDown(() => Directory.current = previous);
-
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(blocSchema());
       final context = await parser.buildContext('user', schema);
-      final update = context.methods.firstWhere((m) => m.methodName == 'updateUser');
+      final update = context.methods.firstWhere(
+        (m) => m.methodName == 'updateUser',
+      );
 
       expect(update.hasParams, isTrue);
       expect(update.hasBody, isTrue);
@@ -155,72 +195,105 @@ void main() {
 
   group('Parser.buildContext (multi-response)', () {
     late Directory tempDir;
+
     setUp(() {
       tempDir = Directory.systemTemp.createTempSync('feature_gen_multi_test_');
       writePubspec(tempDir, name: 'sample_app');
-      Directory.current = tempDir.path;
     });
+
     tearDown(() {
       tempDir.deleteSync(recursive: true);
     });
 
     test('sets isMultiResponse=true and builds entity list', () async {
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(multiResponseSchema());
       final context = await parser.buildContext('auth', schema);
 
       expect(context.isMultiResponse, isTrue);
-      expect(context.entities.map((e) => e.name), containsAll(['User', 'Token']));
+      expect(
+        context.entities.map((e) => e.name),
+        containsAll(['User', 'Token']),
+      );
     });
 
     test('resolves responseEntityName per method', () async {
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(multiResponseSchema());
       final context = await parser.buildContext('auth', schema);
 
-      final getUser = context.methods.firstWhere((m) => m.methodName == 'getUser');
+      final getUser = context.methods.firstWhere(
+        (m) => m.methodName == 'getUser',
+      );
       expect(getUser.responseEntityName, 'User');
       expect(getUser.hasResponse, isTrue);
       expect(getUser.responseIsList, isFalse);
 
-      final postSomeData = context.methods.firstWhere((m) => m.methodName == 'postSomeData');
+      final postSomeData = context.methods.firstWhere(
+        (m) => m.methodName == 'postSomeData',
+      );
       expect(postSomeData.responseEntityName, 'Token');
       expect(postSomeData.hasResponse, isTrue);
 
-      final updateUser = context.methods.firstWhere((m) => m.methodName == 'updateUser');
+      final updateUser = context.methods.firstWhere(
+        (m) => m.methodName == 'updateUser',
+      );
       expect(updateUser.responseEntityName, 'User');
     });
 
     test('marks void methods (no response key) as hasResponse=false', () async {
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(multiResponseSchema());
       final context = await parser.buildContext('auth', schema);
 
-      final deleteUser = context.methods.firstWhere((m) => m.methodName == 'deleteUser');
+      final deleteUser = context.methods.firstWhere(
+        (m) => m.methodName == 'deleteUser',
+      );
       expect(deleteUser.hasResponse, isFalse);
       expect(deleteUser.responseEntityName, isNull);
     });
 
     test('builds entity fields correctly', () async {
-      final parser = Parser(commandHelper: TestCommandHelper());
+      final parser = Parser(
+        commandHelper: TestCommandHelper(),
+        projectRoot: tempDir.path,
+      );
       final schema = Schema.fromJson(multiResponseSchema());
       final context = await parser.buildContext('auth', schema);
 
       final userEntity = context.entities.firstWhere((e) => e.name == 'User');
       final rootField = userEntity.fields.firstWhere((f) => f.isRoot);
       expect(rootField.name, 'User');
-      expect(rootField.properties.map((p) => p.name), containsAll(['id', 'name', 'email']));
+      expect(
+        rootField.properties.map((p) => p.name),
+        containsAll(['id', 'name', 'email']),
+      );
     });
 
-    test('single-response schema remains unaffected (backward compat)', () async {
-      final parser = Parser(commandHelper: TestCommandHelper());
-      final schema = Schema.fromJson(blocSchema());
-      final context = await parser.buildContext('user', schema);
+    test(
+      'single-response schema remains unaffected (backward compat)',
+      () async {
+        final parser = Parser(
+          commandHelper: TestCommandHelper(),
+          projectRoot: tempDir.path,
+        );
+        final schema = Schema.fromJson(blocSchema());
+        final context = await parser.buildContext('user', schema);
 
-      expect(context.isMultiResponse, isFalse);
-      expect(context.entities, isEmpty);
-      // All methods have hasResponse=false in single-response mode.
-      expect(context.methods.every((m) => !m.hasResponse), isTrue);
-    });
+        expect(context.isMultiResponse, isFalse);
+        expect(context.entities, isEmpty);
+        // All methods have hasResponse=false in single-response mode.
+        expect(context.methods.every((m) => !m.hasResponse), isTrue);
+      },
+    );
   });
 }

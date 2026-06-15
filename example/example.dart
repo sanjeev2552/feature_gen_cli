@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 /// Minimal sample to show CLI usage in a Dart-friendly format.
 void main() {
   print("Run this in terminal");

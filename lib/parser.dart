@@ -15,9 +15,12 @@ import 'package:feature_gen_cli/yaml_helper.dart';
 /// as the target project root for `pubspec.yaml` lookup.
 class Parser {
   /// Creates a parser with an injectable [CommandHelper] for test reporting.
-  Parser({CommandHelper? commandHelper}) : _commandHelper = commandHelper ?? CommandHelper();
+  Parser({CommandHelper? commandHelper, String? projectRoot})
+    : _commandHelper = commandHelper ?? CommandHelper(),
+      _projectRoot = projectRoot;
 
   final CommandHelper _commandHelper;
+  final String? _projectRoot;
 
   /// Reads and deserialises the JSON schema file at [path] into a [Schema].
   ///
@@ -54,8 +57,10 @@ class Parser {
   /// `schema.responses`. Each [ContextMethod] is linked to its named entity
   /// via the `response` key on [ApiMethod].
   Future<Context> buildContext(String featureName, Schema schema) async {
-    final projectRoot = Directory.current.path;
-    final projectName = await YamlHelper().getProjectName(workingDirectory: projectRoot);
+    final projectRoot = _projectRoot ?? Directory.current.path;
+    final projectName = await YamlHelper().getProjectName(
+      workingDirectory: projectRoot,
+    );
 
     if (!validateSchema(schema)) {
       throw StateError(
@@ -95,7 +100,9 @@ class Parser {
     final response = schema.response ?? {};
     final contextFields = <NestedContextField>[];
     final fields = buildContextFields(response, contextFields);
-    contextFields.add(NestedContextField(name: feature, properties: fields, isRoot: true));
+    contextFields.add(
+      NestedContextField(name: feature, properties: fields, isRoot: true),
+    );
 
     return Context(
       name: feature,
@@ -134,7 +141,9 @@ class Parser {
       final entityPascal = entry.key.toPascalCase();
       final contextFields = <NestedContextField>[];
       final props = buildContextFields(fieldMap, contextFields);
-      contextFields.add(NestedContextField(name: entityPascal, properties: props, isRoot: true));
+      contextFields.add(
+        NestedContextField(name: entityPascal, properties: props, isRoot: true),
+      );
 
       entities.add(
         EntityContext(
@@ -150,7 +159,10 @@ class Parser {
     // Build per-method context, resolving response entity refs.
     final methods = <ContextMethod>[];
     for (final method in apiMethods.entries) {
-      final contextMethod = buildContextMethod(method, validResponseKeys: validKeys);
+      final contextMethod = buildContextMethod(
+        method,
+        validResponseKeys: validKeys,
+      );
       methods.add(contextMethod);
       if (contextMethod.hasUseCase) generateUseCase = true;
     }
@@ -278,14 +290,19 @@ class Parser {
     return fields.entries.map((entry) {
       final value = entry.value;
       final originalKey = entry.key;
-      final camelCaseKey = originalKey.contains('_') ? originalKey.toCamelCase() : originalKey;
+      final camelCaseKey = originalKey.contains('_')
+          ? originalKey.toCamelCase()
+          : originalKey;
       final hasJsonKey = camelCaseKey != originalKey;
 
       // If nested JSON object → treat as custom model type
       if (value is Map<String, dynamic>) {
         final someData = buildContextFields(value, nestedFields);
         nestedFields.add(
-          NestedContextField(name: camelCaseKey.camelCaseToPascalCase(), properties: someData),
+          NestedContextField(
+            name: camelCaseKey.camelCaseToPascalCase(),
+            properties: someData,
+          ),
         );
         return ContextField(
           name: camelCaseKey,
@@ -359,6 +376,13 @@ class Parser {
     }
     if (schema.config == null) {
       _commandHelper.error('Schema is not valid. "config" is required.');
+      return false;
+    }
+    if (schema.config!.hasMultipleLayers) {
+      _commandHelper.error(
+        'Schema is not valid. Exactly one of "config.bloc", "config.riverpod", '
+        'or "config.getx" must be set to true.',
+      );
       return false;
     }
     if (schema.config!.layer == null) {

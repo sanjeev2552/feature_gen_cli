@@ -56,9 +56,15 @@ class Schema {
         isMultiResponse = true;
         multiResponses = responseMap.map((key, value) {
           if (value is List) {
-            return MapEntry(key, (Map<String, dynamic>.from(value.first as Map), true));
+            return MapEntry(key, (
+              Map<String, dynamic>.from(value.first as Map),
+              true,
+            ));
           }
-          return MapEntry(key, (Map<String, dynamic>.from(value as Map), false));
+          return MapEntry(key, (
+            Map<String, dynamic>.from(value as Map),
+            false,
+          ));
         });
       } else {
         // Mixed / primitive values → existing single-response.
@@ -67,7 +73,9 @@ class Schema {
     }
 
     return Schema(
-      api: json['api'] == null ? null : Api.fromJson(Map<String, dynamic>.from(json['api'] as Map)),
+      api: json['api'] == null
+          ? null
+          : Api.fromJson(Map<String, dynamic>.from(json['api'] as Map)),
       response: singleResponse,
       responses: multiResponses,
       config: json['config'] == null
@@ -95,12 +103,26 @@ class Config {
   /// proceeds.
   final PresentationLayer? layer;
 
-  const Config({this.layer});
+  /// True when the JSON config selected more than one presentation layer.
+  ///
+  /// Validation rejects this so schemas must be explicit and unambiguous.
+  final bool hasMultipleLayers;
+
+  const Config({this.layer, this.hasMultipleLayers = false});
 
   factory Config.fromJson(Map<String, dynamic> json) {
-    if (json['bloc'] == true) return const Config(layer: PresentationLayer.bloc);
-    if (json['riverpod'] == true) return const Config(layer: PresentationLayer.riverpod);
-    if (json['getx'] == true) return const Config(layer: PresentationLayer.getx);
+    final layers = [
+      if (json['bloc'] == true) PresentationLayer.bloc,
+      if (json['riverpod'] == true) PresentationLayer.riverpod,
+      if (json['getx'] == true) PresentationLayer.getx,
+    ];
+
+    if (layers.length == 1) {
+      return Config(layer: layers.single);
+    }
+    if (layers.length > 1) {
+      return const Config(hasMultipleLayers: true);
+    }
     // layer == null — will be caught by Parser.validateSchema.
     return const Config();
   }
@@ -149,7 +171,10 @@ class Methods {
   factory Methods.fromJson(Map<String, dynamic> json) {
     return Methods(
       method: json.map(
-        (key, value) => MapEntry(key, ApiMethod.fromJson(Map<String, dynamic>.from(value as Map))),
+        (key, value) => MapEntry(
+          key,
+          ApiMethod.fromJson(Map<String, dynamic>.from(value as Map)),
+        ),
       ),
     );
   }
@@ -178,7 +203,13 @@ class ApiMethod {
   /// meaning the method returns a list of the referenced entity.
   final bool responseIsList;
 
-  ApiMethod({this.params, this.body, this.query, this.response, this.responseIsList = false});
+  ApiMethod({
+    this.params,
+    this.body,
+    this.query,
+    this.response,
+    this.responseIsList = false,
+  });
 
   factory ApiMethod.fromJson(Map<String, dynamic> json) {
     String? response;
@@ -193,12 +224,17 @@ class ApiMethod {
     }
 
     return ApiMethod(
-      params: json['params'] as Map<String, dynamic>?,
-      body: json['body'] as Map<String, dynamic>?,
-      query: json['query'] as Map<String, dynamic>?,
+      params: _optionalMap(json['params']),
+      body: _optionalMap(json['body']),
+      query: _optionalMap(json['query']),
       response: response,
       responseIsList: responseIsList,
     );
+  }
+
+  static Map<String, dynamic>? _optionalMap(Object? value) {
+    if (value == null) return null;
+    return Map<String, dynamic>.from(value as Map);
   }
 
   Map<String, dynamic> toMap() {
@@ -296,7 +332,11 @@ class NestedContextField {
   final List<ContextField> properties;
   final bool isRoot;
 
-  NestedContextField({required this.name, required this.properties, this.isRoot = false});
+  NestedContextField({
+    required this.name,
+    required this.properties,
+    this.isRoot = false,
+  });
 
   Map<String, dynamic> toMap() {
     return {
