@@ -3,3 +3,5 @@
 .dart_tool/
 *.lock
 /build/
+/.fvm/
+.DS_Store

@@ -4,6 +4,10 @@ import 'package:args/args.dart';
 ArgParser buildArgParser() {
   return ArgParser()
     ..addFlag('help', abbr: 'h')
-    ..addFlag('overwrite', abbr: 'o', help: 'Overwrite existing generated files.')
+    ..addFlag(
+      'overwrite',
+      abbr: 'o',
+      help: 'Overwrite existing generated files.',
+    )
     ..addFlag('version', abbr: 'v');
 }

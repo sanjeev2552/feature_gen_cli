@@ -17,7 +17,7 @@ class Generator {
   ///
   /// [templateBasePath] is primarily a test seam. Production usage leaves it
   /// null so templates are resolved from the installed package.
-  Generator({String? templateBasePath}) : _templateBasePath = templateBasePath;
+  Generator({this._templateBasePath});
 
   final String? _templateBasePath;
 

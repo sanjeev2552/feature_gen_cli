@@ -59,15 +59,13 @@ void main() {
     });
 
     test('ApiMethod safely converts params body and query maps', () {
-      final json =
-          jsonDecode('''
+      final json = jsonDecode('''
         {
           "params": { "id": "int" },
           "body": { "name": "string" },
           "query": { "page": "int" }
         }
-      ''')
-              as Map<String, dynamic>;
+      ''') as Map<String, dynamic>;
       final method = ApiMethod.fromJson(json);
 
       expect(method.params, {'id': 'int'});

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.0
+
+- Pin development and CI to Flutter 3.47.8 / Dart 3.13.7 and raise the minimum Dart SDK to 3.13.7.
+- Refresh direct and development dependency constraints and remove the unused `path` dependency.
+- Generate use cases and the shared `NoParams` contract for features whose methods have no request parameters.
+- Fix Riverpod screen references for feature names containing underscores and watch provider state.
+- Preserve existing dependencies when `dev_dependencies` is absent; reject unreadable or malformed manifests before dependency installation.
+- Stop on dependency, builder, or formatter failures instead of reporting successful generation; send CLI errors to stderr.
+- Validate feature names before generation and reject paths or invalid naming conventions.
+- Remove the obsolete `build_runner --delete-conflicting-outputs` flag.
+- Restore CI checks, gate tagged publication on validation, and compile nine generated Flutter feature variants with real builders and model conversion tests.
+- Add regression tests and a package assessment with remaining improvement opportunities.
+- Align package metadata and documentation links with the current GitHub repository.
+
 ## 1.5.1
 
 ### Bug Fixes

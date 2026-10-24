@@ -10,12 +10,11 @@ import 'package:feature_gen_cli/yaml_helper.dart';
 /// error handling stay consistent across the CLI. These operations mutate the
 /// target project's `pubspec.yaml` and generated files.
 /// Signature for running a process, injected for testability.
-typedef ProcessRunner =
-    Future<ProcessResult> Function(
-      String executable,
-      List<String> args, {
-      String? workingDirectory,
-    });
+typedef ProcessRunner = Future<ProcessResult> Function(
+  String executable,
+  List<String> args, {
+  String? workingDirectory,
+});
 
 class CommandRunner {
   /// Creates a runner with optional injected process/YAML helpers for tests.
@@ -35,8 +34,16 @@ class CommandRunner {
   ///
   /// stdout output is written to [stdout]; stderr output is written to [stderr]
   /// so callers (CI pipelines, IDEs) can distinguish errors from normal output.
-  Future<int> _runCommand(String executable, List<String> args, {String? workingDirectory}) async {
-    final result = await _processRunner(executable, args, workingDirectory: workingDirectory);
+  Future<int> _runCommand(
+    String executable,
+    List<String> args, {
+    String? workingDirectory,
+  }) async {
+    final result = await _processRunner(
+      executable,
+      args,
+      workingDirectory: workingDirectory,
+    );
 
     if ((result.stdout as String).isNotEmpty) {
       stdout.writeln(result.stdout);
@@ -53,7 +60,10 @@ class CommandRunner {
   /// Dependencies are added via `dart pub add` to keep the project in a valid
   /// state (it updates `pubspec.yaml` and runs `pub get`). This includes
   /// packages needed for the configured [Config.layer].
-  Future<void> checkAndAddDeps({required Config config, required String workingDirectory}) async {
+  Future<void> checkAndAddDeps({
+    required Config config,
+    required String workingDirectory,
+  }) async {
     final requiredDependencies = [
       'get_it',
       'injectable',
@@ -102,17 +112,20 @@ class CommandRunner {
         ], workingDirectory: workingDirectory);
 
         if (exitCode != 0) {
-          _commandHelper.warning('Failed to add dependencies');
+          throw StateError('Failed to add dependencies (exit code $exitCode).');
         } else {
-          _commandHelper.success('Dependencies added successfully', shouldExit: false);
+          _commandHelper.success(
+            'Dependencies added successfully',
+            shouldExit: false,
+          );
         }
       }
     } catch (e) {
-      _commandHelper.warning('Could not check dependencies: $e');
+      throw StateError('Could not install required dependencies: $e');
     }
   }
 
-  /// Runs `dart run build_runner build -d` in the target project.
+  /// Runs `dart run build_runner build` in the target project.
   ///
   /// Returns the exit code so the caller can decide whether to warn or abort.
   Future<int> runBuildRunner({required String workingDirectory}) async {
@@ -122,11 +135,12 @@ class CommandRunner {
       'run',
       'build_runner',
       'build',
-      '-d',
     ], workingDirectory: workingDirectory);
 
     if (buildExitCode != 0) {
-      _commandHelper.warning('build_runner failed with exit code $buildExitCode');
+      _commandHelper.warning(
+        'build_runner failed with exit code $buildExitCode',
+      );
       return buildExitCode;
     }
 
@@ -136,10 +150,16 @@ class CommandRunner {
   /// Runs `dart format` on the generated feature directory.
   ///
   /// Scoped to [featureName] so only generated files are touched.
-  Future<void> runFormat({required String featureName, required String workingDirectory}) async {
-    await _runCommand('dart', [
+  Future<void> runFormat({
+    required String featureName,
+    required String workingDirectory,
+  }) async {
+    final exitCode = await _runCommand('dart', [
       'format',
       'lib/features/$featureName',
     ], workingDirectory: workingDirectory);
+    if (exitCode != 0) {
+      throw StateError('Formatting failed (exit code $exitCode).');
+    }
   }
 }

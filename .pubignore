@@ -1,0 +1,7 @@
+.dart_tool/
+*.lock
+/build/
+/.fvm/
+/.fvmrc
+/.github/
+.DS_Store

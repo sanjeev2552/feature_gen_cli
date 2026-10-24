@@ -6,6 +6,21 @@ import 'support/test_fakes.dart';
 
 void main() {
   group('CommandRunner dependency management', () {
+    test('throws when dependency installation fails', () async {
+      final fakeProcess = FakeProcessRunner()..exitCode = 1;
+      final runner = CommandRunner(
+        processRunner: fakeProcess.call,
+        yamlHelper: FakeYamlHelper(dependencies: {}, devDependencies: {}),
+        commandHelper: TestCommandHelper(),
+      );
+      await expectLater(
+        runner.checkAndAddDeps(
+          config: const Config(layer: PresentationLayer.bloc),
+          workingDirectory: '/tmp',
+        ),
+        throwsStateError,
+      );
+    });
     test('adds missing deps for bloc config', () async {
       final fakeProcess = FakeProcessRunner();
       final runner = CommandRunner(
@@ -21,8 +36,25 @@ void main() {
 
       expect(fakeProcess.calls, isNotEmpty);
       final (_, args, _) = fakeProcess.calls.first;
-      expect(args, containsAll(['pub', 'add', 'get_it', 'injectable', 'flutter_bloc', 'bloc']));
-      expect(args, containsAll(['dev:build_runner', 'dev:freezed', 'dev:json_serializable']));
+      expect(
+        args,
+        containsAll([
+          'pub',
+          'add',
+          'get_it',
+          'injectable',
+          'flutter_bloc',
+          'bloc',
+        ]),
+      );
+      expect(
+        args,
+        containsAll([
+          'dev:build_runner',
+          'dev:freezed',
+          'dev:json_serializable',
+        ]),
+      );
     });
 
     test('adds missing deps for riverpod config', () async {
@@ -137,7 +169,15 @@ void main() {
   });
 
   group('CommandRunner build/format', () {
-    test('runBuildRunner calls dart run build_runner build -d', () async {
+    test('throws when formatting fails', () async {
+      final fakeProcess = FakeProcessRunner()..exitCode = 1;
+      final runner = CommandRunner(processRunner: fakeProcess.call);
+      await expectLater(
+        runner.runFormat(featureName: 'user', workingDirectory: '/tmp'),
+        throwsStateError,
+      );
+    });
+    test('runBuildRunner calls dart run build_runner build', () async {
       final fakeProcess = FakeProcessRunner();
       final runner = CommandRunner(
         processRunner: fakeProcess.call,
@@ -149,7 +189,7 @@ void main() {
       final (exe, args, _) = fakeProcess.calls.first;
 
       expect(exe, 'dart');
-      expect(args, ['run', 'build_runner', 'build', '-d']);
+      expect(args, ['run', 'build_runner', 'build']);
     });
 
     test('runFormat calls dart format on feature directory', () async {

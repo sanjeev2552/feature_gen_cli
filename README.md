@@ -6,7 +6,7 @@ Feature Gen is a Dart CLI that scaffolds clean-architecture feature modules for 
 
 ## Quick Start
 
-**Requirements:** Dart SDK `>=3.10.4`, a Flutter project with a valid `pubspec.yaml`, and `dart` on your PATH. Run the CLI from the Flutter project root so `pubspec.yaml` resolution works.
+**Requirements:** Dart SDK `>=3.13.7 <4.0.0`, a Flutter project with a valid `pubspec.yaml`, and `dart` on your PATH. Development and generated-code checks use Flutter **3.47.8** (Dart **3.13.7**), pinned in `.fvmrc`. The CLI itself remains a pure Dart package. Run it from the Flutter project root so `pubspec.yaml` resolution works.
 
 ```bash
 # 1. Install
@@ -14,7 +14,7 @@ dart pub global activate feature_gen_cli
 
 # 2. Run
 feature_gen_cli <feature_name> <schema.json>
-# Example: feature_gen_cli user example/user_schema.json
+# Example: feature_gen_cli user example/user_schema_single_response.json
 
 # Overwrite existing generated files (optional)
 feature_gen_cli <feature_name> <schema.json> --overwrite
@@ -120,6 +120,8 @@ const factory UserState.deleteUserSuccess() = _DeleteUserSuccessState;
 
 The CLI automatically adds missing dependencies, runs `build_runner`, and formats the generated code.
 
+Methods without request parameters also get a use case and use the shared `NoParams` contract. A failed dependency installation, builder, or formatter stops generation with a nonzero exit code. Files already written are retained so you can inspect the failure and retry.
+
 ## Overwrite Behavior
 
 By default, the CLI only generates missing files and will not overwrite existing files. Use `--overwrite` (or `-o`) to force regeneration.
@@ -129,22 +131,27 @@ By default, the CLI only generates missing files and will not overwrite existing
 - **Schema validation errors** — Ensure `config`, `api.methods`, and `response` exist, and that exactly one of `config.bloc`, `config.riverpod`, or `config.getx` is `true`. The CLI now prints a specific message for each validation failure.
 - **`Invalid JSON in schema file`** — The schema file contains a syntax error. Validate it with a JSON linter and retry.
 - **`Template not found`** — The package may be installed incorrectly. Re-run `dart pub global activate feature_gen_cli` to restore the template files.
-- **`build_runner` failed** — Re-run it manually: `dart run build_runner build -d`.
+- **`build_runner` failed** — Resolve the reported builder errors, then re-run `dart run build_runner build`.
 
 ## Support ❤️
 
-If you find this package helpful, please consider giving it a like on [pub.dev](https://pub.dev/packages/feature_gen_cli) and adding a ⭐ star on [GitHub](https://github.com/sanjeev2552/feature_gen)! Your support is greatly appreciated.
+If you find this package helpful, please consider giving it a like on [pub.dev](https://pub.dev/packages/feature_gen_cli) and adding a ⭐ star on [GitHub](https://github.com/sanjeev2552/feature_gen_cli)! Your support is greatly appreciated.
 
 ## Contributing
 
+- Select the pinned Flutter SDK: `fvm install` (if using FVM), then prefix the following commands with `fvm`.
 - Install dependencies: `dart pub get`
 - Run tests: `dart test`
 - Run the analyzer: `dart analyze`
 - Format code: `dart format .`
+- Compile generated Flutter features and test model conversion: `dart run tool/check_generated.dart`
+- Check package contents: `dart pub publish --dry-run`
 
-All three checks (`dart format`, `dart analyze`, `dart test`) run automatically on every push and pull request via the CI workflow.
+Formatting, analysis, unit tests, generated Flutter checks, and a publication dry run execute on every push and pull request. Tagged publication waits for these checks to pass.
 
-Note: The test suite is pure unit tests and avoids running external commands.
+The unit suite avoids external commands. The generated-code check creates a temporary Flutter project, resolves dependencies from pub.dev, runs builders, analyzes nine features covering all three presentation layers, and tests nested model conversion. It needs network access and keeps the temporary project on failure for inspection.
+
+See [ASSESSMENT.md](ASSESSMENT.md) for the package review and prioritized follow-up improvements.
 
 ## License
 

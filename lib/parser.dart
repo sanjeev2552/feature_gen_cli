@@ -15,9 +15,8 @@ import 'package:feature_gen_cli/yaml_helper.dart';
 /// as the target project root for `pubspec.yaml` lookup.
 class Parser {
   /// Creates a parser with an injectable [CommandHelper] for test reporting.
-  Parser({CommandHelper? commandHelper, String? projectRoot})
-    : _commandHelper = commandHelper ?? CommandHelper(),
-      _projectRoot = projectRoot;
+  Parser({CommandHelper? commandHelper, this._projectRoot})
+    : _commandHelper = commandHelper ?? CommandHelper();
 
   final CommandHelper _commandHelper;
   final String? _projectRoot;
@@ -57,6 +56,13 @@ class Parser {
   /// `schema.responses`. Each [ContextMethod] is linked to its named entity
   /// via the `response` key on [ApiMethod].
   Future<Context> buildContext(String featureName, Schema schema) async {
+    if (!RegExp(r'^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$').hasMatch(featureName)) {
+      throw ArgumentError.value(
+        featureName,
+        'featureName',
+        'Must be lowercase snake_case.',
+      );
+    }
     final projectRoot = _projectRoot ?? Directory.current.path;
     final projectName = await YamlHelper().getProjectName(
       workingDirectory: projectRoot,
@@ -71,9 +77,8 @@ class Parser {
 
     // Use consistent naming across the generated layers.
     final feature = featureName.toPascalCase();
-    bool generateUseCase = false;
-
     final apiMethods = schema.api?.methods?.method ?? {};
+    final generateUseCase = apiMethods.isNotEmpty;
 
     if (schema.isMultiResponse) {
       return _buildMultiResponseContext(
@@ -93,7 +98,6 @@ class Parser {
     for (var method in apiMethods.entries) {
       final contextMethod = buildContextMethod(method);
       methods.add(contextMethod);
-      if (contextMethod.hasUseCase) generateUseCase = true;
     }
 
     // Response fields become entity/model properties.
@@ -164,7 +168,6 @@ class Parser {
         validResponseKeys: validKeys,
       );
       methods.add(contextMethod);
-      if (contextMethod.hasUseCase) generateUseCase = true;
     }
 
     // Use the first entity as the "primary" for legacy template vars that

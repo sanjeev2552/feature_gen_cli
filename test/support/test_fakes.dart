@@ -49,7 +49,9 @@ class FakeYamlHelper extends YamlHelper {
   final Map<String, dynamic>? devDependencies;
 
   @override
-  Future<(YamlMap?, YamlMap?)> getDependencies({required String workingDirectory}) async {
+  Future<(YamlMap?, YamlMap?)> getDependencies({
+    required String workingDirectory,
+  }) async {
     if (dependencies == null && devDependencies == null) {
       return (null, null);
     }
@@ -78,7 +80,9 @@ class FakeYamlHelper extends YamlHelper {
 
     final doc = loadYaml(buffer.toString()) as YamlMap;
     final depMap = dependencies == null ? null : doc['dependencies'] as YamlMap;
-    final devDepMap = devDependencies == null ? null : doc['dev_dependencies'] as YamlMap;
+    final devDepMap = devDependencies == null
+        ? null
+        : doc['dev_dependencies'] as YamlMap;
     return (depMap, devDepMap);
   }
 }
@@ -98,7 +102,8 @@ class FakeProcessRunner {
 }
 
 class FakeParser extends Parser {
-  FakeParser(this._schema, this._context) : super(commandHelper: TestCommandHelper());
+  FakeParser(this._schema, this._context)
+    : super(commandHelper: TestCommandHelper());
 
   final Schema _schema;
   final Context _context;
@@ -107,7 +112,8 @@ class FakeParser extends Parser {
   Schema parse(String path) => _schema;
 
   @override
-  Future<Context> buildContext(String featureName, Schema schema) async => _context;
+  Future<Context> buildContext(String featureName, Schema schema) async =>
+      _context;
 }
 
 class FakeGenerator extends Generator {
@@ -115,7 +121,10 @@ class FakeGenerator extends Generator {
   Context? lastContext;
 
   @override
-  Future<void> generateFeature(Context context, {bool overwrite = false}) async {
+  Future<void> generateFeature(
+    Context context, {
+    bool overwrite = false,
+  }) async {
     lastContext = context;
     lastOverwrite = overwrite;
   }
@@ -127,20 +136,29 @@ class FakeCommandRunner extends CommandRunner {
   bool checkDepsCalled = false;
   bool buildRunnerCalled = false;
   bool formatCalled = false;
+  bool failDependencies = false;
+  int buildExitCode = 0;
 
   @override
-  Future<void> checkAndAddDeps({required Config config, required String workingDirectory}) async {
+  Future<void> checkAndAddDeps({
+    required Config config,
+    required String workingDirectory,
+  }) async {
     checkDepsCalled = true;
+    if (failDependencies) throw StateError('Dependency installation failed');
   }
 
   @override
   Future<int> runBuildRunner({required String workingDirectory}) async {
     buildRunnerCalled = true;
-    return 0;
+    return buildExitCode;
   }
 
   @override
-  Future<void> runFormat({required String featureName, required String workingDirectory}) async {
+  Future<void> runFormat({
+    required String featureName,
+    required String workingDirectory,
+  }) async {
     formatCalled = true;
   }
 }

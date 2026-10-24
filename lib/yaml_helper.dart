@@ -13,7 +13,8 @@ class YamlHelper {
   /// Creates a helper with an optional [CommandHelper] for consistent output.
   ///
   /// Provide a fake in tests to capture or suppress output.
-  YamlHelper({CommandHelper? commandHelper}) : _commandHelper = commandHelper ?? CommandHelper();
+  YamlHelper({CommandHelper? commandHelper})
+    : _commandHelper = commandHelper ?? CommandHelper();
 
   final CommandHelper _commandHelper;
 
@@ -23,7 +24,9 @@ class YamlHelper {
     final libUri = await Isolate.resolvePackageUri(packageUri);
 
     if (libUri == null) {
-      _commandHelper.error('Could not resolve package uri for package:feature_gen_cli');
+      _commandHelper.error(
+        'Could not resolve package uri for package:feature_gen_cli',
+      );
       // error() exits the process; this return is a safety net for test doubles.
       return null;
     }
@@ -42,7 +45,8 @@ class YamlHelper {
   /// generation can continue rather than aborting the entire pipeline.
   Future<String> getProjectName({required String workingDirectory}) async {
     try {
-      final content = await File('$workingDirectory/pubspec.yaml').readAsString();
+      final content = await File('$workingDirectory/pubspec.yaml')
+          .readAsString();
       final doc = loadYaml(content) as YamlMap;
       final projectName = doc['name'] as String;
 
@@ -59,18 +63,21 @@ class YamlHelper {
 
   /// Returns the `dependencies` and `dev_dependencies` maps from the target project's pubspec.
   ///
-  /// Returns `(null, null)` with a warning if the pubspec cannot be read.
-  Future<(YamlMap?, YamlMap?)> getDependencies({required String workingDirectory}) async {
+  /// Missing sections return null. Invalid or unreadable pubspecs throw so the
+  /// pipeline cannot install dependencies using an incomplete manifest.
+  Future<(YamlMap?, YamlMap?)> getDependencies({
+    required String workingDirectory,
+  }) async {
     try {
-      final content = await File('$workingDirectory/pubspec.yaml').readAsString();
+      final content = await File('$workingDirectory/pubspec.yaml')
+          .readAsString();
       final doc = loadYaml(content) as YamlMap;
-      final dependencies = doc['dependencies'] as YamlMap;
-      final devDependencies = doc['dev_dependencies'] as YamlMap;
+      final dependencies = doc['dependencies'] as YamlMap?;
+      final devDependencies = doc['dev_dependencies'] as YamlMap?;
 
       return (dependencies, devDependencies);
     } catch (e) {
-      _commandHelper.warning('Could not read dependencies from pubspec.yaml: $e');
-      return (null, null);
+      throw StateError('Could not read dependencies from pubspec.yaml: $e');
     }
   }
 }

@@ -13,9 +13,9 @@ class CommandHelper {
         '''
 \x1B[31m$message\x1B[0m
 
-\x1B[31mRun 'dart tool/feature_gen_cli.dart -h' for more information\x1B[0m''';
+\x1B[31mRun 'feature_gen_cli -h' for more information\x1B[0m''';
 
-    stdout.writeln(error);
+    stderr.writeln(error);
     exit(1);
   }
 

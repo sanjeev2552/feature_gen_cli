@@ -24,7 +24,9 @@ Future<void> main(List<String> arguments) async {
   }
 
   if (results.rest.length < 2) {
-    CommandHelper().error('Usage: feature_gen_cli <feature_name> <schema.json>');
+    CommandHelper().error(
+      'Usage: feature_gen_cli <feature_name> <schema.json>',
+    );
     return;
   }
 

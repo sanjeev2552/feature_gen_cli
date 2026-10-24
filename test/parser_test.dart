@@ -110,6 +110,25 @@ void main() {
   });
 
   group('Parser.buildContext', () {
+    for (final name in [
+      '../escape',
+      'user/profile',
+      'User',
+      'user-profile',
+      '',
+      'user__profile',
+    ]) {
+      test(
+        'rejects invalid feature name "$name" before reading the project',
+        () async {
+          final parser = Parser(projectRoot: '/nonexistent/project');
+          await expectLater(
+            parser.buildContext(name, Schema()),
+            throwsArgumentError,
+          );
+        },
+      );
+    }
     test('throws StateError when schema validation fails', () async {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
       addTearDown(() => tempDir.deleteSync(recursive: true));

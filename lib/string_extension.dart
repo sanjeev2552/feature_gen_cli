@@ -7,7 +7,11 @@ extension StringExtension on String {
   /// Converts `snake_case` → `PascalCase`.
   String toPascalCase() {
     return split('_')
-        .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
         .join();
   }
 
@@ -22,7 +26,9 @@ extension StringExtension on String {
         words
             .skip(1)
             .map(
-              (word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+              (word) => word.isEmpty
+                  ? ''
+                  : word[0].toUpperCase() + word.substring(1).toLowerCase(),
             )
             .join();
   }

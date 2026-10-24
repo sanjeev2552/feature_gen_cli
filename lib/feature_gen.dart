@@ -33,7 +33,10 @@ class FeatureGen {
   /// Runs the complete pipeline using the parsed CLI [results].
   Future<void> generate(ArgResults results) async {
     final featureName = results.rest.first;
-    _commandHelper.success('Generating feature: $featureName', shouldExit: false);
+    _commandHelper.success(
+      'Generating feature: $featureName',
+      shouldExit: false,
+    );
     final overwrite = results['overwrite'] == true;
 
     try {
@@ -51,10 +54,12 @@ class FeatureGen {
       await _generator.generateFeature(context, overwrite: overwrite);
 
       // Run code generation if needed (freezed/json_serializable).
-      final exitCode = await _commandRunner.runBuildRunner(workingDirectory: context.projectRoot);
+      final exitCode = await _commandRunner.runBuildRunner(
+        workingDirectory: context.projectRoot,
+      );
       if (exitCode != 0) {
-        _commandHelper.warning(
-          'build_runner failed. Run \'dart run build_runner build -d\' in your project manually.',
+        throw StateError(
+          'build_runner failed. Run \'dart run build_runner build\' in your project manually.',
         );
       }
 

@@ -89,6 +89,50 @@ void main() {
       return parser.buildContext(featureName, schema);
     }
 
+    for (final layer in PresentationLayer.values) {
+      for (final multi in [false, true]) {
+        test('generates parameterless usecases for ${layer.name}, multi=$multi', () async {
+          final tempDir = Directory.systemTemp.createTempSync(
+            'feature_gen_no_params_',
+          );
+          addTearDown(() => tempDir.deleteSync(recursive: true));
+          final context = await buildContext(
+            schemaJson: {
+              'config': {layer.name: true},
+              'api': {
+                'methods': {
+                  'getUser': multi ? {'response': 'user'} : <String, dynamic>{},
+                },
+              },
+              'response': multi
+                  ? {
+                      'user': {'id': 'int'},
+                    }
+                  : {'id': 'int'},
+            },
+            projectDir: tempDir,
+            featureName: 'user_profile',
+          );
+          await testGenerator().generateFeature(context);
+          final usecase = File(
+            '${tempDir.path}/lib/features/user_profile/domain/usecases/get_user_usecase.dart',
+          ).readAsStringSync();
+          expect(usecase, contains('NoParams'));
+          expect(
+            File('${tempDir.path}/lib/features/shared/usecase/usecase.dart')
+                .existsSync(),
+            isTrue,
+          );
+          if (layer == PresentationLayer.riverpod) {
+            final screen = File(
+              '${tempDir.path}/lib/features/user_profile/presentation/screen/user_profile_screen.dart',
+            ).readAsStringSync();
+            expect(screen, contains('ref.watch(userProfileProvider)'));
+          }
+        });
+      }
+    }
+
     test('generates BLoC files and usecases, not riverpod notifier', () async {
       final tempDir = Directory.systemTemp.createTempSync('feature_gen_test_');
       addTearDown(() => tempDir.deleteSync(recursive: true));

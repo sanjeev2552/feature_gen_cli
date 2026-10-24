@@ -7,7 +7,7 @@ class {{name}}Screen extends ConsumerWidget {
 
     @override
     Widget build(BuildContext context, WidgetRef ref) {
-        final {{nameCamelCase}}Notifier = ref.read({{nameLowerCase}}Provider.notifier);
+        ref.watch({{nameCamelCase}}Provider);
 
         return const Placeholder();
     }

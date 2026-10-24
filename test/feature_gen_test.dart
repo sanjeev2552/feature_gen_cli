@@ -22,7 +22,9 @@ void main() {
         nameLowerCase: 'feature',
         nameCamelCase: 'feature',
         isList: false,
-        fields: [NestedContextField(name: 'Feature', properties: [], isRoot: true)],
+        fields: [
+          NestedContextField(name: 'Feature', properties: [], isRoot: true),
+        ],
         methods: [],
         generateUseCase: false,
         projectRoot: '/tmp',
@@ -45,6 +47,37 @@ void main() {
   });
 
   group('FeatureGen.generate error handling', () {
+    for (final failDependencies in [true, false]) {
+      test(
+        'reports failure and stops after ${failDependencies ? 'dependencies' : 'build_runner'} fails',
+        () async {
+          final helper = TestCommandHelper();
+          final runner = FakeCommandRunner()
+            ..failDependencies = failDependencies
+            ..buildExitCode = 1;
+          final generator = FakeGenerator();
+          final featureGen = FeatureGen(
+            parser: FakeParser(Schema(), _ThrowingParser._dummyContext()),
+            generator: generator,
+            commandRunner: runner,
+            commandHelper: helper,
+          );
+          await featureGen.generate(
+            buildArgParser().parse(['feature', 'schema.json']),
+          );
+          expect(helper.errors, hasLength(1));
+          expect(
+            helper.successes.any(
+              (message) => message.contains('generated successfully'),
+            ),
+            isFalse,
+          );
+          expect(runner.formatCalled, isFalse);
+          expect(runner.buildRunnerCalled, !failDependencies);
+          expect(generator.lastContext, failDependencies ? isNull : isNotNull);
+        },
+      );
+    }
     test('surfaces error message when parser throws', () async {
       final argParser = buildArgParser();
       final results = argParser.parse(['feature', 'schema.json']);

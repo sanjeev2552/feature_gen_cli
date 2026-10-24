@@ -91,12 +91,20 @@ Map<String, dynamic> multiResponseSchema() {
         'email': 'string',
         'address': {'street': 'string', 'city': 'string'},
       },
-      'token': {'accessToken': 'string', 'refreshToken': 'string', 'tokenType': 'string'},
+      'token': {
+        'accessToken': 'string',
+        'refreshToken': 'string',
+        'tokenType': 'string',
+      },
     },
   };
 }
 
-File writeSchemaFile(Directory dir, Map<String, dynamic> schema, {String name = 'schema.json'}) {
+File writeSchemaFile(
+  Directory dir,
+  Map<String, dynamic> schema, {
+  String name = 'schema.json',
+}) {
   final file = File('${dir.path}/$name');
   file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(schema));
   return file;
